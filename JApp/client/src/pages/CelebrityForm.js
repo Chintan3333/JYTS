@@ -55,7 +55,7 @@ function CelebrityForm() {
   const fetchCelebrity = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:5000/api/celebrities/${id}`);
+      const response = await axios.get(`https://jyts-app-backend.onrender.com/api/celebrities/${id}`);
       const celebrity = response.data;
       setFormData({
         ...celebrity,
@@ -105,9 +105,9 @@ function CelebrityForm() {
     try {
       setLoading(true);
       if (id) {
-        await axios.put(`http://localhost:5000/api/celebrities/${id}`, formData);
+        await axios.put(`https://jyts-app-backend.onrender.com/api/celebrities/${id}`, formData);
       } else {
-        await axios.post('http://localhost:5000/api/celebrities', formData);
+        await axios.post('https://jyts-app-backend.onrender.com/api/celebrities', formData);
       }
       navigate('/celebrities');
     } catch (err) {

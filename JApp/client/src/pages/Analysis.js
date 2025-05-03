@@ -54,7 +54,7 @@ function Analysis() {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/celebrities');
+      const response = await axios.get('https://jyts-app-backend.onrender.com/api/celebrities');
       const uniqueCategories = [...new Set(response.data.map(celebrity => celebrity.category))];
       setCategories(uniqueCategories);
     } catch (err) {
@@ -65,7 +65,7 @@ function Analysis() {
   const fetchAnalysis = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:5000/api/celebrities/analysis/planetary-positions?category=${selectedCategory}`);
+      const response = await axios.get(`https://jyts-app-backend.onrender.com/api/celebrities/analysis/planetary-positions?category=${selectedCategory}`);
       setAnalysis(response.data);
       setLoading(false);
     } catch (err) {

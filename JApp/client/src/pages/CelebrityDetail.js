@@ -62,7 +62,7 @@ function CelebrityDetail() {
 
   const fetchCelebrity = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/celebrities/${id}`);
+      const response = await axios.get(`https://jyts-app-backend.onrender.com/api/celebrities/${id}`);
       setCelebrity(response.data);
       setLoading(false);
     } catch (err) {

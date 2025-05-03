@@ -27,7 +27,7 @@ function CelebrityList() {
 
   const fetchCelebrities = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/celebrities');
+      const response = await axios.get('https://jyts-app-backend.onrender.com/api/celebrities');
       setCelebrities(response.data);
       setLoading(false);
     } catch (err) {
@@ -39,7 +39,7 @@ function CelebrityList() {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this celebrity?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/celebrities/${id}`);
+        await axios.delete(`https://jyts-app-backend.onrender.com/api/celebrities/${id}`);
         fetchCelebrities();
       } catch (err) {
         setError('Failed to delete celebrity');
