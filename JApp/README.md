@@ -1,13 +1,3 @@
-# Celebrity Vedic Kundli Database
-
-A MERN stack application to store and manage celebrity Vedic kundli data.
-
-## Features
-- Store and manage celebrity kundli data
-- Track planetary positions (9 planets)
-- Record zodiac sign placements
-- Store house positions
-- Track ascendant information
 
 ## Tech Stack
 - MongoDB
