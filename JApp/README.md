@@ -45,18 +45,3 @@ npm install
 npm start
 ```
 
-## Project Structure
-```
-celebrity-kundli/
-├── backend/
-│   ├── models/
-│   ├── routes/
-│   ├── controllers/
-│   └── server.js
-└── frontend/
-    ├── src/
-    │   ├── components/
-    │   ├── pages/
-    │   └── App.js
-    └── package.json
-``` 
