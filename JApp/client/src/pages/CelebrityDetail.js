@@ -49,6 +49,21 @@ const getPlanetColor = (planet) => {
   return colorMap[planet] || '#1976d2'; // Default blue if planet not found
 };
 
+// Helper function to get text color based on background
+const getTextColor = (backgroundColor) => {
+  // Convert hex to RGB
+  const hex = backgroundColor.replace('#', '');
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+  
+  // Calculate relative luminance
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  
+  // Return black or white based on luminance
+  return luminance > 0.5 ? '#000000' : '#ffffff';
+};
+
 function CelebrityDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -126,8 +141,8 @@ function CelebrityDetail() {
   }
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
-      <Paper elevation={3} sx={{ p: 4 }}>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Paper elevation={3} sx={{ p: { xs: 2, md: 4 } }}>
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Button
             startIcon={<ArrowBackIcon />}
@@ -209,27 +224,26 @@ function CelebrityDetail() {
             </Typography>
           </Grid>
           <Grid item xs={12}>
-            <Box sx={{ 
-              display: 'grid',
-              gridTemplateColumns: 'repeat(5, 1fr)',
-              gridTemplateRows: 'repeat(5, 1fr)',
-              gap: 1,
-              width: '100%',
-              maxWidth: '800px',
-              margin: '20px auto',
-              border: '2px solid #1976d2',
-              '& > div': {
-                border: '1px solid #ccc',
-                padding: 2,
-                minHeight: '100px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                position: 'relative',
-                backgroundColor: '#f5f5f5',
-              }
-            }}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(5, 1fr)',
+                gap: 2,
+                mt: 2,
+                '& > div': {
+                  position: 'relative',
+                  minHeight: '120px',
+                  p: 2,
+                  borderRadius: 2,
+                  border: (theme) => `1px solid ${theme.palette.divider}`,
+                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                },
+              }}
+            >
               {/* Row 1 */}
               <Box></Box>
               {/* House 2 */}
@@ -237,7 +251,7 @@ function CelebrityDetail() {
                 <Typography variant="subtitle2" color="text.secondary">
                   House 2
                 </Typography>
-                <Typography variant="body2">
+                <Typography variant="body2" color="text.secondary">
                   {housePositions[1] || ''}
                 </Typography>
                 <Box sx={{ 
@@ -251,16 +265,19 @@ function CelebrityDetail() {
                 }}>
                   {Object.entries(celebrity.planets).map(([planet, data]) => {
                     if (data.house === 2) {
+                      const bgColor = getPlanetColor(planet);
+                      const textColor = getTextColor(bgColor);
                       return (
                         <Box
                           key={planet}
                           sx={{
-                            backgroundColor: getPlanetColor(planet),
-                            color: 'white',
+                            backgroundColor: bgColor,
+                            color: textColor,
                             padding: '2px 4px',
                             borderRadius: '4px',
                             fontSize: '0.8rem',
                             fontWeight: 'bold',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                           }}
                         >
                           {getPlanetAbbr(planet)}
@@ -291,16 +308,19 @@ function CelebrityDetail() {
                 }}>
                   {Object.entries(celebrity.planets).map(([planet, data]) => {
                     if (data.house === 12) {
+                      const bgColor = getPlanetColor(planet);
+                      const textColor = getTextColor(bgColor);
                       return (
                         <Box
                           key={planet}
                           sx={{
-                            backgroundColor: getPlanetColor(planet),
-                            color: 'white',
+                            backgroundColor: bgColor,
+                            color: textColor,
                             padding: '2px 4px',
                             borderRadius: '4px',
                             fontSize: '0.8rem',
                             fontWeight: 'bold',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                           }}
                         >
                           {getPlanetAbbr(planet)}
@@ -333,16 +353,19 @@ function CelebrityDetail() {
                 }}>
                   {Object.entries(celebrity.planets).map(([planet, data]) => {
                     if (data.house === 3) {
+                      const bgColor = getPlanetColor(planet);
+                      const textColor = getTextColor(bgColor);
                       return (
                         <Box
                           key={planet}
                           sx={{
-                            backgroundColor: getPlanetColor(planet),
-                            color: 'white',
+                            backgroundColor: bgColor,
+                            color: textColor,
                             padding: '2px 4px',
                             borderRadius: '4px',
                             fontSize: '0.8rem',
                             fontWeight: 'bold',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                           }}
                         >
                           {getPlanetAbbr(planet)}
@@ -373,16 +396,19 @@ function CelebrityDetail() {
                 }}>
                   {Object.entries(celebrity.planets).map(([planet, data]) => {
                     if (data.house === 1) {
+                      const bgColor = getPlanetColor(planet);
+                      const textColor = getTextColor(bgColor);
                       return (
                         <Box
                           key={planet}
                           sx={{
-                            backgroundColor: getPlanetColor(planet),
-                            color: 'white',
+                            backgroundColor: bgColor,
+                            color: textColor,
                             padding: '2px 4px',
                             borderRadius: '4px',
                             fontSize: '0.8rem',
                             fontWeight: 'bold',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                           }}
                         >
                           {getPlanetAbbr(planet)}
@@ -413,16 +439,19 @@ function CelebrityDetail() {
                 }}>
                   {Object.entries(celebrity.planets).map(([planet, data]) => {
                     if (data.house === 11) {
+                      const bgColor = getPlanetColor(planet);
+                      const textColor = getTextColor(bgColor);
                       return (
                         <Box
                           key={planet}
                           sx={{
-                            backgroundColor: getPlanetColor(planet),
-                            color: 'white',
+                            backgroundColor: bgColor,
+                            color: textColor,
                             padding: '2px 4px',
                             borderRadius: '4px',
                             fontSize: '0.8rem',
                             fontWeight: 'bold',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                           }}
                         >
                           {getPlanetAbbr(planet)}
@@ -455,16 +484,19 @@ function CelebrityDetail() {
                 }}>
                   {Object.entries(celebrity.planets).map(([planet, data]) => {
                     if (data.house === 4) {
+                      const bgColor = getPlanetColor(planet);
+                      const textColor = getTextColor(bgColor);
                       return (
                         <Box
                           key={planet}
                           sx={{
-                            backgroundColor: getPlanetColor(planet),
-                            color: 'white',
+                            backgroundColor: bgColor,
+                            color: textColor,
                             padding: '2px 4px',
                             borderRadius: '4px',
                             fontSize: '0.8rem',
                             fontWeight: 'bold',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                           }}
                         >
                           {getPlanetAbbr(planet)}
@@ -495,16 +527,19 @@ function CelebrityDetail() {
                 }}>
                   {Object.entries(celebrity.planets).map(([planet, data]) => {
                     if (data.house === 10) {
+                      const bgColor = getPlanetColor(planet);
+                      const textColor = getTextColor(bgColor);
                       return (
                         <Box
                           key={planet}
                           sx={{
-                            backgroundColor: getPlanetColor(planet),
-                            color: 'white',
+                            backgroundColor: bgColor,
+                            color: textColor,
                             padding: '2px 4px',
                             borderRadius: '4px',
                             fontSize: '0.8rem',
                             fontWeight: 'bold',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                           }}
                         >
                           {getPlanetAbbr(planet)}
@@ -537,16 +572,19 @@ function CelebrityDetail() {
                 }}>
                   {Object.entries(celebrity.planets).map(([planet, data]) => {
                     if (data.house === 5) {
+                      const bgColor = getPlanetColor(planet);
+                      const textColor = getTextColor(bgColor);
                       return (
                         <Box
                           key={planet}
                           sx={{
-                            backgroundColor: getPlanetColor(planet),
-                            color: 'white',
+                            backgroundColor: bgColor,
+                            color: textColor,
                             padding: '2px 4px',
                             borderRadius: '4px',
                             fontSize: '0.8rem',
                             fontWeight: 'bold',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                           }}
                         >
                           {getPlanetAbbr(planet)}
@@ -577,16 +615,19 @@ function CelebrityDetail() {
                 }}>
                   {Object.entries(celebrity.planets).map(([planet, data]) => {
                     if (data.house === 7) {
+                      const bgColor = getPlanetColor(planet);
+                      const textColor = getTextColor(bgColor);
                       return (
                         <Box
                           key={planet}
                           sx={{
-                            backgroundColor: getPlanetColor(planet),
-                            color: 'white',
+                            backgroundColor: bgColor,
+                            color: textColor,
                             padding: '2px 4px',
                             borderRadius: '4px',
                             fontSize: '0.8rem',
                             fontWeight: 'bold',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                           }}
                         >
                           {getPlanetAbbr(planet)}
@@ -617,16 +658,19 @@ function CelebrityDetail() {
                 }}>
                   {Object.entries(celebrity.planets).map(([planet, data]) => {
                     if (data.house === 9) {
+                      const bgColor = getPlanetColor(planet);
+                      const textColor = getTextColor(bgColor);
                       return (
                         <Box
                           key={planet}
                           sx={{
-                            backgroundColor: getPlanetColor(planet),
-                            color: 'white',
+                            backgroundColor: bgColor,
+                            color: textColor,
                             padding: '2px 4px',
                             borderRadius: '4px',
                             fontSize: '0.8rem',
                             fontWeight: 'bold',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                           }}
                         >
                           {getPlanetAbbr(planet)}
@@ -659,16 +703,19 @@ function CelebrityDetail() {
                 }}>
                   {Object.entries(celebrity.planets).map(([planet, data]) => {
                     if (data.house === 6) {
+                      const bgColor = getPlanetColor(planet);
+                      const textColor = getTextColor(bgColor);
                       return (
                         <Box
                           key={planet}
                           sx={{
-                            backgroundColor: getPlanetColor(planet),
-                            color: 'white',
+                            backgroundColor: bgColor,
+                            color: textColor,
                             padding: '2px 4px',
                             borderRadius: '4px',
                             fontSize: '0.8rem',
                             fontWeight: 'bold',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                           }}
                         >
                           {getPlanetAbbr(planet)}
@@ -699,16 +746,19 @@ function CelebrityDetail() {
                 }}>
                   {Object.entries(celebrity.planets).map(([planet, data]) => {
                     if (data.house === 8) {
+                      const bgColor = getPlanetColor(planet);
+                      const textColor = getTextColor(bgColor);
                       return (
                         <Box
                           key={planet}
                           sx={{
-                            backgroundColor: getPlanetColor(planet),
-                            color: 'white',
+                            backgroundColor: bgColor,
+                            color: textColor,
                             padding: '2px 4px',
                             borderRadius: '4px',
                             fontSize: '0.8rem',
                             fontWeight: 'bold',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                           }}
                         >
                           {getPlanetAbbr(planet)}

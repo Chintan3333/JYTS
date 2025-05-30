@@ -12,6 +12,10 @@ import {
   CircularProgress,
   Box,
   Divider,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -20,6 +24,7 @@ function CelebrityList() {
   const [celebrities, setCelebrities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState('all');
 
   useEffect(() => {
     fetchCelebrities();
@@ -47,6 +52,24 @@ function CelebrityList() {
     }
   };
 
+  // Get unique categories from celebrities
+  const categories = ['all', ...new Set(celebrities.map(c => c.category || 'Uncategorized'))];
+
+  // Filter celebrities based on selected category
+  const filteredCelebrities = selectedCategory === 'all' 
+    ? celebrities 
+    : celebrities.filter(celebrity => celebrity.category === selectedCategory);
+
+  // Group filtered celebrities by category
+  const groupedCelebrities = filteredCelebrities.reduce((acc, celebrity) => {
+    const category = celebrity.category || 'Uncategorized';
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(celebrity);
+    return acc;
+  }, {});
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
@@ -65,21 +88,27 @@ function CelebrityList() {
     );
   }
 
-  // Group celebrities by category
-  const groupedCelebrities = celebrities.reduce((acc, celebrity) => {
-    const category = celebrity.category || 'Uncategorized';
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(celebrity);
-    return acc;
-  }, {});
-
   return (
     <Container maxWidth="lg" sx={{ mt: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom color="primary">
-        Celebrity List
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" component="h1" color="primary">
+          Celebrity List
+        </Typography>
+        <FormControl sx={{ minWidth: 200 }}>
+          <InputLabel>Category</InputLabel>
+          <Select
+            value={selectedCategory}
+            label="Category"
+            onChange={(e) => setSelectedCategory(e.target.value)}
+          >
+            {categories.map((category) => (
+              <MenuItem key={category} value={category}>
+                {category.charAt(0).toUpperCase() + category.slice(1)}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
       
       {Object.entries(groupedCelebrities).map(([category, categoryCelebrities]) => (
         <Box key={category} sx={{ mb: 4 }}>
