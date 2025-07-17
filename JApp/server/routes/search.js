@@ -234,4 +234,64 @@ router.post('/house-lord', async (req, res) => {
     }
 });
 
+// Search by planet in house
+router.post('/planet-in-house', async (req, res) => {
+    try {
+        const { planet, houseNumber } = req.body;
+        
+        if (!planet || !houseNumber) {
+            return res.status(400).json({ error: 'Missing required parameters' });
+        }
+
+        if (houseNumber < 1 || houseNumber > 12) {
+            return res.status(400).json({ error: 'House number must be between 1 and 12' });
+        }
+
+        const planetKey = planet.toLowerCase();
+        const query = {
+            [`planets.${planetKey}.house`]: houseNumber
+        };
+
+        const celebrities = await Celebrity.find(query)
+            .select('name birthDate birthPlace category planets ascendant')
+            .sort('name');
+
+        // Add planet in house information to the results
+        const enrichedResults = celebrities.map(celebrity => {
+            const planetData = celebrity.planets[planetKey];
+            return {
+                ...celebrity.toObject(),
+                planetInHouse: {
+                    planet: planet,
+                    house: houseNumber,
+                    sign: planetData.sign,
+                    degree: planetData.degree
+                }
+            };
+        });
+
+        res.json(enrichedResults);
+    } catch (error) {
+        console.error('Error in planet in house search:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Search by ascendant sign
+router.post('/ascendant', async (req, res) => {
+    try {
+        const { sign } = req.body;
+        if (!sign) {
+            return res.status(400).json({ error: 'Missing required parameter: sign' });
+        }
+        const celebrities = await Celebrity.find({ 'ascendant.sign': sign })
+            .select('name birthDate birthPlace category planets ascendant')
+            .sort('name');
+        res.json(celebrities);
+    } catch (error) {
+        console.error('Error in ascendant search:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 module.exports = router; 

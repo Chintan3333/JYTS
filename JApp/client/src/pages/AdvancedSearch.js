@@ -79,6 +79,13 @@ const AdvancedSearch = () => {
       houseNumber: '',
       positionHouse: '',
     },
+    planetInHouse: {
+      planet: '',
+      houseNumber: '',
+    },
+    ascendant: {
+      sign: '',
+    },
   });
 
   const [searchResults, setSearchResults] = useState([]);
@@ -115,6 +122,13 @@ const AdvancedSearch = () => {
         houseNumber: '',
         positionHouse: '',
       },
+      planetInHouse: {
+        planet: '',
+        houseNumber: '',
+      },
+      ascendant: {
+        sign: '',
+      },
     });
     setSearchResults([]);
     setError(null);
@@ -142,6 +156,12 @@ const AdvancedSearch = () => {
       } else if (filters.houseLord.houseNumber && filters.houseLord.positionHouse) {
         endpoint = 'https://jyts-app-backend.onrender.com/api/search/house-lord';
         data = filters.houseLord;
+      } else if (filters.planetInHouse.planet && filters.planetInHouse.houseNumber) {
+        endpoint = 'https://jyts-app-backend.onrender.com/api/search/planet-in-house';
+        data = filters.planetInHouse;
+      } else if (filters.ascendant.sign) {
+        endpoint = 'https://jyts-app-backend.onrender.com/api/search/ascendant';
+        data = filters.ascendant;
       } else {
         setError('Please fill in all required fields for at least one search type');
         setLoading(false);
@@ -183,6 +203,11 @@ const AdvancedSearch = () => {
           {celebrity.houseLord && (
             <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
               {celebrity.houseLord.houseNumber}th House Lord ({celebrity.houseLord.lord}) in {celebrity.houseLord.position.house}th House ({celebrity.houseLord.position.sign} {celebrity.houseLord.position.degree}°)
+            </Typography>
+          )}
+          {celebrity.planetInHouse && (
+            <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
+              {celebrity.planetInHouse.planet} in {celebrity.planetInHouse.house}th House ({celebrity.planetInHouse.sign} {celebrity.planetInHouse.degree}°)
             </Typography>
           )}
           <Box sx={{ mt: 1 }}>
@@ -365,6 +390,61 @@ const AdvancedSearch = () => {
                     <MenuItem key={num} value={num}>
                       {num}th House
                     </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+
+            <Divider sx={{ my: 2 }} />
+
+            {/* Planet in House Filter */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                By Planet in House
+              </Typography>
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>Planet</InputLabel>
+                <Select
+                  value={filters.planetInHouse.planet}
+                  label="Planet"
+                  onChange={(e) => handleFilterChange('planetInHouse', 'planet', e.target.value)}
+                >
+                  {planets.map((planet) => (
+                    <MenuItem key={planet} value={planet}>{planet}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl fullWidth>
+                <InputLabel>House Number</InputLabel>
+                <Select
+                  value={filters.planetInHouse.houseNumber}
+                  label="House Number"
+                  onChange={(e) => handleFilterChange('planetInHouse', 'houseNumber', e.target.value)}
+                >
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => (
+                    <MenuItem key={num} value={num}>
+                      {num}th House
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+
+            {/* Ascendant Search Section */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                By Ascendant Sign
+              </Typography>
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>Ascendant Sign</InputLabel>
+                <Select
+                  value={filters.ascendant.sign}
+                  label="Ascendant Sign"
+                  onChange={(e) => handleFilterChange('ascendant', 'sign', e.target.value)}
+                >
+                  <MenuItem value=""><em>None</em></MenuItem>
+                  {zodiacSigns.map(sign => (
+                    <MenuItem key={sign} value={sign}>{sign}</MenuItem>
                   ))}
                 </Select>
               </FormControl>

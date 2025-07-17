@@ -1503,6 +1503,8 @@ function CelebrityDetail() {
             <Divider sx={{ my: 3 }} />
           </Grid>
 
+         
+
           {/* Yogas and Doshas Section */}
           <Grid item xs={12}>
             <Typography variant="h6" gutterBottom>
@@ -1828,6 +1830,187 @@ function CelebrityDetail() {
           <Grid item xs={12}>
             <Divider sx={{ my: 3 }} />
           </Grid>
+
+           {/* Predictions Section */}
+          <Grid item xs={12}>
+            <Typography variant="h6" gutterBottom>
+              House-wise Predictions
+            </Typography>
+            <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
+              {Array.from({ length: 12 }, (_, i) => {
+                const houseNum = i + 1;
+                const houseSign = getSignForHouse(houseNum, celebrity.ascendant.sign);
+                // Planets in this house
+                const planetsInHouse = Object.entries(celebrity.planets)
+                  .filter(([_, data]) => data.house === houseNum)
+                  .map(([planet]) => planet.charAt(0).toUpperCase() + planet.slice(1));
+                // Planets aspecting this house (special aspects)
+                const aspectingPlanets = Object.entries(celebrity.planets)
+                  .filter(([planet, data]) => {
+                    if (!data.house) return false;
+                    const aspects = [];
+                    const from = data.house;
+                    const planetLower = planet.toLowerCase();
+                    if (planetLower === 'mars') {
+                      aspects.push(((from - 1 + 3) % 12) + 1); // 4th
+                      aspects.push(((from - 1 + 6) % 12) + 1); // 7th
+                      aspects.push(((from - 1 + 7) % 12) + 1); // 8th
+                    } else if (planetLower === 'jupiter') {
+                      aspects.push(((from - 1 + 4) % 12) + 1); // 5th
+                      aspects.push(((from - 1 + 6) % 12) + 1); // 7th
+                      aspects.push(((from - 1 + 8) % 12) + 1); // 9th
+                    } else if (planetLower === 'saturn') {
+                      aspects.push(((from - 1 + 2) % 12) + 1); // 3rd
+                      aspects.push(((from - 1 + 6) % 12) + 1); // 7th
+                      aspects.push(((from - 1 + 9) % 12) + 1); // 10th
+                    } else if (planetLower === 'rahu' || planetLower === 'ketu') {
+                      aspects.push(((from - 1 + 4) % 12) + 1); // 5th
+                      aspects.push(((from - 1 + 6) % 12) + 1); // 7th
+                      aspects.push(((from - 1 + 8) % 12) + 1); // 9th
+                    } else {
+                      aspects.push(((from - 1 + 6) % 12) + 1); // 7th aspect for all others
+                    }
+                    return aspects.includes(houseNum);
+                  })
+                  .map(([planet]) => planet.charAt(0).toUpperCase() + planet.slice(1));
+                // House lord and its position
+                const houseLord = getLordOfSign(houseSign);
+                const houseLordData = celebrity.planets[houseLord?.toLowerCase()];
+                const houseLordPos = houseLordData
+                  ? `${houseLordData.sign} (House ${houseLordData.house}, ${houseLordData.degree}°)`
+                  : 'Unknown';
+                // Prediction summary (simple)
+                let prediction = `This house is influenced by: `;
+                if (planetsInHouse.length > 0) {
+                  prediction += `Planets in house: ${planetsInHouse.join(', ')}. `;
+                } else {
+                  prediction += `No planets in this house. `;
+                }
+                if (aspectingPlanets.length > 0) {
+                  prediction += `Planets aspecting: ${aspectingPlanets.join(', ')}. `;
+                }
+                prediction += `House lord (${houseLord}) is in ${houseLordPos}.`;
+                return (
+                  <Box key={houseNum} sx={{ mb: 2, p: 2, border: '1px solid #eee', borderRadius: 2 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                      House {houseNum} ({houseSign})
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {prediction}
+                    </Typography>
+                  </Box>
+                );
+              })}
+            </Paper>
+          </Grid>
+
+          {/* Planet-wise Predictions */}
+          <Grid item xs={12}>
+            <Typography variant="h6" gutterBottom>
+              Planet-wise Predictions
+            </Typography>
+          </Grid>
+          {Object.entries(celebrity.planets).map(([planet, data]) => {
+            // 1. Lordship: which houses this planet lords
+            const zodiacSigns = [
+              'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
+              'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
+            ];
+            const ascendantSign = celebrity.ascendant.sign;
+            const ascendantIndex = zodiacSigns.indexOf(ascendantSign);
+            const signLords = {
+              'Aries': 'mars',
+              'Taurus': 'venus',
+              'Gemini': 'mercury',
+              'Cancer': 'moon',
+              'Leo': 'sun',
+              'Virgo': 'mercury',
+              'Libra': 'venus',
+              'Scorpio': 'mars',
+              'Sagittarius': 'jupiter',
+              'Capricorn': 'saturn',
+              'Aquarius': 'saturn',
+              'Pisces': 'jupiter'
+            };
+            // Find all houses where this planet is lord
+            const lordHouses = [];
+            for (let i = 0; i < 12; i++) {
+              const houseNum = i + 1;
+              const signIndex = (ascendantIndex + i) % 12;
+              const sign = zodiacSigns[signIndex];
+              if (signLords[sign] === planet) {
+                lordHouses.push(houseNum);
+              }
+            }
+
+            // 2. Placement
+            const placement = data.house && data.sign ? `House ${data.house}, ${data.sign}` : 'Unknown';
+
+            // 3. Aspects (Vedic aspects)
+            const aspects = [];
+            if (data.house) {
+              const from = data.house;
+              // All planets aspect 7th from their position
+              aspects.push({
+                house: ((from - 1 + 6) % 12) + 1,
+                type: '7th aspect'
+              });
+              // Special aspects
+              if (planet === 'mars') {
+                aspects.push({ house: ((from - 1 + 3) % 12) + 1, type: '4th aspect' });
+                aspects.push({ house: ((from - 1 + 7) % 12) + 1, type: '8th aspect' });
+              } else if (planet === 'jupiter') {
+                aspects.push({ house: ((from - 1 + 4) % 12) + 1, type: '5th aspect' });
+                aspects.push({ house: ((from - 1 + 8) % 12) + 1, type: '9th aspect' });
+              } else if (planet === 'saturn') {
+                aspects.push({ house: ((from - 1 + 2) % 12) + 1, type: '3rd aspect' });
+                aspects.push({ house: ((from - 1 + 9) % 12) + 1, type: '10th aspect' });
+              } else if (planet === 'rahu' || planet === 'ketu') {
+                aspects.push({ house: ((from - 1 + 4) % 12) + 1, type: '5th aspect' });
+                aspects.push({ house: ((from - 1 + 8) % 12) + 1, type: '9th aspect' });
+              }
+            }
+            // Map aspect houses to signs
+            const aspectDetails = aspects.map(a => {
+              const signIndex = (ascendantIndex + a.house - 1) % 12;
+              return `House ${a.house} (${zodiacSigns[signIndex]}) [${a.type}]`;
+            });
+
+            // 4. Connections
+            // a) Conjunctions (same sign)
+            const conjunctions = Object.entries(celebrity.planets)
+              .filter(([other, d]) => other !== planet && d.sign === data.sign)
+              .map(([other]) => other.charAt(0).toUpperCase() + other.slice(1));
+            // b) Aspects (other planets aspected by this planet)
+            const aspectedPlanets = Object.entries(celebrity.planets)
+              .filter(([other, d]) => {
+                if (other === planet || !d.house) return false;
+                return aspects.some(a => d.house === ((data.house -1 + (parseInt(a.type)) || 6) % 12));
+              })
+              .map(([other]) => other.charAt(0).toUpperCase() + other.slice(1));
+            // c) Sign exchanges (mutual reception)
+            const signExchanges = Object.entries(celebrity.planets)
+              .filter(([other, d]) => other !== planet && signLords[d.sign] === planet && signLords[data.sign] === other)
+              .map(([other]) => other.charAt(0).toUpperCase() + other.slice(1));
+
+            return (
+              <Grid item xs={12} key={planet}>
+                <Paper elevation={1} sx={{ p: 2, mb: 2 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                    {planet.charAt(0).toUpperCase() + planet.slice(1)}
+                  </Typography>
+                  <ul style={{ marginTop: 8, marginBottom: 8 }}>
+                    <li><b>Lords of Houses:</b> {lordHouses.length > 0 ? lordHouses.map(h => `House ${h}`).join(', ') : 'None'}</li>
+                    <li><b>Placement:</b> {placement}</li>
+                    <li><b>Aspects:</b> {aspectDetails.length > 0 ? aspectDetails.join('; ') : 'None'}</li>
+                    <li><b>Conjunctions:</b> {conjunctions.length > 0 ? conjunctions.join(', ') : 'None'}</li>
+                    <li><b>Aspected Planets:</b> {aspectedPlanets.length > 0 ? aspectedPlanets.join(', ') : 'None'}</li>
+                    <li><b>Sign Exchanges:</b> {signExchanges.length > 0 ? signExchanges.join(', ') : 'None'}</li>
+                  </ul>
+                </Paper>
+              </Grid>
+            );
+          })}
         </Grid>
       </Paper>
     </Container>
