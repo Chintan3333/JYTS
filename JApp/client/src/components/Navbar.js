@@ -21,6 +21,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import SearchIcon from '@mui/icons-material/Search';
+import InfoIcon from '@mui/icons-material/Info';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -48,6 +49,11 @@ function Navbar({ onToggleTheme, mode }) {
       title: 'Advanced Search',
       path: '/advanced-search',
       icon: <SearchIcon />,
+    },
+    {
+      title: 'Planet Info',
+      path: '/planet-info',
+      icon: <InfoIcon />,
     },
     {
       title: 'Add Celebrity',

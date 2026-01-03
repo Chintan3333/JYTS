@@ -9,6 +9,7 @@ import CelebrityForm from './pages/CelebrityForm';
 import CelebrityDetail from './pages/CelebrityDetail';
 import Analysis from './pages/Analysis';
 import AdvancedSearch from './pages/AdvancedSearch';
+import PlanetInfo from './pages/PlanetInfo';
 
 function App() {
   const [mode, setMode] = useState('light');
@@ -31,6 +32,7 @@ function App() {
           <Route path="/celebrities/:id/edit" element={<CelebrityForm />} />
           <Route path="/analysis" element={<Analysis />} />
           <Route path="/advanced-search" element={<AdvancedSearch />} />
+          <Route path="/planet-info" element={<PlanetInfo />} />
         </Routes>
       </Router>
     </ThemeProvider>

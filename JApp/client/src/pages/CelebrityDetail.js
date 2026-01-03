@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { planetInfo, houseInfo } from '../data/astrologyData';
 import {
   Container,
   Typography,
@@ -1879,25 +1880,95 @@ function CelebrityDetail() {
                 const houseLordPos = houseLordData
                   ? `${houseLordData.sign} (House ${houseLordData.house}, ${houseLordData.degree}°)`
                   : 'Unknown';
-                // Prediction summary (simple)
-                let prediction = `This house is influenced by: `;
-                if (planetsInHouse.length > 0) {
-                  prediction += `Planets in house: ${planetsInHouse.join(', ')}. `;
-                } else {
-                  prediction += `No planets in this house. `;
-                }
-                if (aspectingPlanets.length > 0) {
-                  prediction += `Planets aspecting: ${aspectingPlanets.join(', ')}. `;
-                }
-                prediction += `House lord (${houseLord}) is in ${houseLordPos}.`;
+                // Get house information
+                const houseData = houseInfo[houseNum];
+                const houseColor = getPlanetColor(houseLord?.toLowerCase() || 'sun');
+                
+                // Determine if house is strong or afflicted
+                const hasPlanets = planetsInHouse.length > 0;
+                const hasAspects = aspectingPlanets.length > 0;
+                const isAfflicted = planetsInHouse.some(p => {
+                  const planetLower = p.toLowerCase();
+                  const planetData = celebrity.planets[planetLower];
+                  if (!planetData) return false;
+                  // Check if planet is debilitated or malefic
+                  const maleficPlanets = ['mars', 'saturn', 'rahu', 'ketu', 'sun'];
+                  return maleficPlanets.includes(planetLower);
+                });
+
                 return (
-                  <Box key={houseNum} sx={{ mb: 2, p: 2, border: '1px solid #eee', borderRadius: 2 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                      House {houseNum} ({houseSign})
+                  <Box key={houseNum} sx={{ mb: 2, p: 2, border: `1px solid ${alpha(houseColor, 0.2)}`, borderRadius: 2, backgroundColor: alpha(houseColor, 0.05) }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1, color: houseColor }}>
+                      {houseData?.name || `House ${houseNum} (${houseSign})`}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {prediction}
-                    </Typography>
+                    {houseData && (
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic' }}>
+                        {houseData.description}
+                      </Typography>
+                    )}
+                    
+                    {/* House Influence Summary */}
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+                        Planetary Influences:
+                      </Typography>
+                      {planetsInHouse.length > 0 ? (
+                        <Typography variant="body2" color="text.secondary">
+                          Planets in house: <strong>{planetsInHouse.join(', ')}</strong>
+                        </Typography>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          No planets in this house
+                        </Typography>
+                      )}
+                      {aspectingPlanets.length > 0 && (
+                        <Typography variant="body2" color="text.secondary">
+                          Planets aspecting: <strong>{aspectingPlanets.join(', ')}</strong>
+                        </Typography>
+                      )}
+                      <Typography variant="body2" color="text.secondary">
+                        House lord ({houseLord}) is in {houseLordPos}
+                      </Typography>
+                    </Box>
+
+                    {/* Main Subjects */}
+                    {houseData && houseData.mainSubjects && (
+                      <Box sx={{ mb: 2 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+                          Main Subjects:
+                        </Typography>
+                        <Grid container spacing={1}>
+                          {houseData.mainSubjects.slice(0, 4).map((subject, idx) => (
+                            <Grid item xs={12} sm={6} key={idx}>
+                              <Typography variant="body2" sx={{ fontWeight: 600, color: houseColor }}>
+                                • {subject.title}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary" sx={{ pl: 1, display: 'block' }}>
+                                {subject.items.slice(0, 2).join(', ')}
+                              </Typography>
+                            </Grid>
+                          ))}
+                        </Grid>
+                      </Box>
+                    )}
+
+                    {/* Predictions based on strength */}
+                    {houseData && (
+                      <Box sx={{ mt: 2, p: 1.5, borderRadius: 1, backgroundColor: isAfflicted ? alpha('#f44336', 0.1) : alpha('#4caf50', 0.1) }}>
+                        <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: isAfflicted ? '#f44336' : '#4caf50' }}>
+                          {isAfflicted ? '⚠️ Potential Challenges:' : '🌟 Positive Expression:'}
+                        </Typography>
+                        <Box component="ul" sx={{ m: 0, pl: 2 }}>
+                          {(isAfflicted ? houseData.negative : houseData.positive).slice(0, 3).map((item, idx) => (
+                            <li key={idx}>
+                              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
+                                {item}
+                              </Typography>
+                            </li>
+                          ))}
+                        </Box>
+                      </Box>
+                    )}
                   </Box>
                 );
               })}
@@ -1993,24 +2064,151 @@ function CelebrityDetail() {
               .filter(([other, d]) => other !== planet && signLords[d.sign] === planet && signLords[data.sign] === other)
               .map(([other]) => other.charAt(0).toUpperCase() + other.slice(1));
 
+            // Get planet information
+            const planetData = planetInfo[planet.toLowerCase()];
+            const planetColor = getPlanetColor(planet);
+            const textColor = getTextColor(planetColor);
+            
+            // Determine if planet is strong or afflicted
+            const isDebilitatedPlanet = isDebilitated(planet.charAt(0).toUpperCase() + planet.slice(1), data.sign);
+            const isExaltedPlanet = isExalted(planet.toLowerCase(), data.sign);
+            const hasConjunctions = conjunctions.length > 0;
+            const hasAspects = aspectDetails.length > 0;
+            const isStrong = isExaltedPlanet || (lordHouses.length > 0 && !isDebilitatedPlanet);
+            const isAfflictedPlanet = isDebilitatedPlanet || (hasConjunctions && conjunctions.some(c => {
+              const otherPlanet = c.toLowerCase();
+              const maleficPlanets = ['mars', 'saturn', 'rahu', 'ketu'];
+              return maleficPlanets.includes(otherPlanet);
+            }));
+
             return (
               <Grid item xs={12} key={planet}>
-                <Paper elevation={1} sx={{ p: 2, mb: 2 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                    {planet.charAt(0).toUpperCase() + planet.slice(1)}
-                  </Typography>
-                  <ul style={{ marginTop: 8, marginBottom: 8 }}>
-                    <li><b>Lords of Houses:</b> {lordHouses.length > 0 ? lordHouses.map(h => `House ${h}`).join(', ') : 'None'}</li>
-                    <li><b>Placement:</b> {placement}</li>
-                    <li><b>Aspects:</b> {aspectDetails.length > 0 ? aspectDetails.join('; ') : 'None'}</li>
-                    <li><b>Conjunctions:</b> {conjunctions.length > 0 ? conjunctions.join(', ') : 'None'}</li>
-                    <li><b>Aspected Planets:</b> {aspectedPlanets.length > 0 ? aspectedPlanets.join(', ') : 'None'}</li>
-                    <li><b>Sign Exchanges:</b> {signExchanges.length > 0 ? signExchanges.join(', ') : 'None'}</li>
-                  </ul>
+                <Paper 
+                  elevation={1} 
+                  sx={{ 
+                    p: 2, 
+                    mb: 2, 
+                    border: `1px solid ${alpha(planetColor, 0.3)}`,
+                    backgroundColor: alpha(planetColor, 0.05)
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                    <Box
+                      sx={{
+                        backgroundColor: planetColor,
+                        color: textColor,
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 'bold',
+                        fontSize: '0.9rem',
+                      }}
+                    >
+                      {getPlanetAbbr(planet)}
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600, color: planetColor }}>
+                        {planetData?.name || planet.charAt(0).toUpperCase() + planet.slice(1)}
+                      </Typography>
+                      {planetData && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontStyle: 'italic' }}>
+                          {planetData.description}
+                        </Typography>
+                      )}
+                    </Box>
+                    {isExaltedPlanet && (
+                      <Chip label="Exalted" size="small" color="success" variant="outlined" />
+                    )}
+                    {isDebilitatedPlanet && (
+                      <Chip label="Debilitated" size="small" color="error" variant="outlined" />
+                    )}
+                  </Box>
+
+                  {/* Technical Details */}
+                  <Box sx={{ mb: 2, p: 1.5, backgroundColor: alpha(planetColor, 0.1), borderRadius: 1 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+                      Technical Details:
+                    </Typography>
+                    <Grid container spacing={1}>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="body2" color="text.secondary">
+                          <strong>Lords of Houses:</strong> {lordHouses.length > 0 ? lordHouses.map(h => `House ${h}`).join(', ') : 'None'}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="body2" color="text.secondary">
+                          <strong>Placement:</strong> {placement}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="body2" color="text.secondary">
+                          <strong>Aspects:</strong> {aspectDetails.length > 0 ? aspectDetails.join('; ') : 'None'}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="body2" color="text.secondary">
+                          <strong>Conjunctions:</strong> {conjunctions.length > 0 ? conjunctions.join(', ') : 'None'}
+                        </Typography>
+                      </Grid>
+                      {signExchanges.length > 0 && (
+                        <Grid item xs={12}>
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>Sign Exchanges:</strong> {signExchanges.join(', ')}
+                          </Typography>
+                        </Grid>
+                      )}
+                    </Grid>
+                  </Box>
+
+                  {/* Main Subjects */}
+                  {planetData && planetData.mainSubjects && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1, color: planetColor }}>
+                        Main Subjects:
+                      </Typography>
+                      <Grid container spacing={1}>
+                        {planetData.mainSubjects.slice(0, 4).map((subject, idx) => (
+                          <Grid item xs={12} sm={6} key={idx}>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: planetColor }}>
+                              • {subject.title}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ pl: 1, display: 'block' }}>
+                              {subject.items.slice(0, 2).join(', ')}
+                            </Typography>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </Box>
+                  )}
+
+                  {/* Predictions */}
+                  {planetData && (
+                    <Box sx={{ mt: 2, p: 1.5, borderRadius: 1, backgroundColor: isAfflictedPlanet ? alpha('#f44336', 0.1) : alpha('#4caf50', 0.1) }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: isAfflictedPlanet ? '#f44336' : '#4caf50' }}>
+                        {isAfflictedPlanet ? '⚠️ Potential Challenges:' : '🌟 Positive Expression:'}
+                      </Typography>
+                      <Box component="ul" sx={{ m: 0, pl: 2 }}>
+                        {(isAfflictedPlanet ? planetData.negative : planetData.positive).slice(0, 3).map((item, idx) => (
+                          <li key={idx}>
+                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
+                              {item}
+                            </Typography>
+                          </li>
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
                 </Paper>
               </Grid>
             );
           })}
+
+          <Grid item xs={12}>
+            <Divider sx={{ my: 3 }} />
+          </Grid>
         </Grid>
       </Paper>
     </Container>
