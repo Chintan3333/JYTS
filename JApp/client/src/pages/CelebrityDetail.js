@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { planetInfo, houseInfo } from '../data/astrologyData';
+import { planetInfo, houseInfo, planetInSignTraits, houseLordInHouseEffects, planetInHouseEffects } from '../data/astrologyData';
 import {
   Container,
   Typography,
@@ -13,7 +13,11 @@ import {
   Divider,
   Chip,
   Tooltip,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EditIcon from '@mui/icons-material/Edit';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import InfoIcon from '@mui/icons-material/Info';
@@ -1880,96 +1884,145 @@ function CelebrityDetail() {
                 const houseLordPos = houseLordData
                   ? `${houseLordData.sign} (House ${houseLordData.house}, ${houseLordData.degree}°)`
                   : 'Unknown';
+                const houseLordPlacementHouse = houseLordData?.house;
+                const houseLordPlacementPrediction =
+                  houseLordPlacementHouse
+                    ? houseLordInHouseEffects?.[houseNum]?.[houseLordPlacementHouse]
+                    : null;
+                // Planet(s) in this house: planet-in-house predictions
+                const planetHousePredictions = Object.entries(celebrity.planets)
+                  .filter(([_, data]) => data.house === houseNum)
+                  .map(([planetKey, pdata]) => {
+                    const pKey = planetKey.toLowerCase();
+                    const txt = planetInHouseEffects?.[pKey]?.[houseNum];
+                    if (!txt) return null;
+                    return { planet: planetKey, text: txt };
+                  })
+                  .filter(Boolean);
                 // Get house information
                 const houseData = houseInfo[houseNum];
                 const houseColor = getPlanetColor(houseLord?.toLowerCase() || 'sun');
                 
-                // Determine if house is strong or afflicted
-                const hasPlanets = planetsInHouse.length > 0;
-                const hasAspects = aspectingPlanets.length > 0;
-                const isAfflicted = planetsInHouse.some(p => {
-                  const planetLower = p.toLowerCase();
-                  const planetData = celebrity.planets[planetLower];
-                  if (!planetData) return false;
-                  // Check if planet is debilitated or malefic
-                  const maleficPlanets = ['mars', 'saturn', 'rahu', 'ketu', 'sun'];
-                  return maleficPlanets.includes(planetLower);
-                });
-
                 return (
-                  <Box key={houseNum} sx={{ mb: 2, p: 2, border: `1px solid ${alpha(houseColor, 0.2)}`, borderRadius: 2, backgroundColor: alpha(houseColor, 0.05) }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1, color: houseColor }}>
-                      {houseData?.name || `House ${houseNum} (${houseSign})`}
-                    </Typography>
-                    {houseData && (
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic' }}>
-                        {houseData.description}
+                  <Accordion
+                    key={houseNum}
+                    sx={{
+                      mb: 1,
+                      border: `1px solid ${alpha(houseColor, 0.2)}`,
+                      borderRadius: '8px !important',
+                      backgroundColor: alpha(houseColor, 0.05),
+                      '&:before': { display: 'none' },
+                    }}
+                  >
+                    <AccordionSummary
+                      expandIcon={<ExpandMoreIcon />}
+                      sx={{ '& .MuiAccordionSummary-content': { alignItems: 'center', my: 1 } }}
+                    >
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600, color: houseColor }}>
+                        {houseData?.name || `House ${houseNum} (${houseSign})`}
                       </Typography>
-                    )}
-                    
-                    {/* House Influence Summary */}
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
-                        Planetary Influences:
-                      </Typography>
-                      {planetsInHouse.length > 0 ? (
-                        <Typography variant="body2" color="text.secondary">
-                          Planets in house: <strong>{planetsInHouse.join(', ')}</strong>
-                        </Typography>
-                      ) : (
-                        <Typography variant="body2" color="text.secondary">
-                          No planets in this house
+                      {planetsInHouse.length > 0 && (
+                        <Chip
+                          label={`${planetsInHouse.length} planet(s)`}
+                          size="small"
+                          sx={{ ml: 1 }}
+                          variant="outlined"
+                        />
+                      )}
+                    </AccordionSummary>
+                    <AccordionDetails sx={{ pt: 0 }}>
+                      {houseData && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic' }}>
+                          {houseData.description}
                         </Typography>
                       )}
-                      {aspectingPlanets.length > 0 && (
-                        <Typography variant="body2" color="text.secondary">
-                          Planets aspecting: <strong>{aspectingPlanets.join(', ')}</strong>
-                        </Typography>
+
+                      {/* House Lord Placement Prediction */}
+                      {houseLordPlacementPrediction && (
+                        <Box sx={{ mb: 2, p: 1.5, borderRadius: 1, backgroundColor: alpha(houseColor, 0.1) }}>
+                          <Typography
+                            variant="caption"
+                            sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: houseColor }}
+                          >
+                            House Lord Placement Prediction:
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {houseLordPlacementPrediction}
+                          </Typography>
+                        </Box>
                       )}
-                      <Typography variant="body2" color="text.secondary">
-                        House lord ({houseLord}) is in {houseLordPos}
-                      </Typography>
-                    </Box>
 
-                    {/* Main Subjects */}
-                    {houseData && houseData.mainSubjects && (
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
-                          Main Subjects:
-                        </Typography>
-                        <Grid container spacing={1}>
-                          {houseData.mainSubjects.slice(0, 4).map((subject, idx) => (
-                            <Grid item xs={12} sm={6} key={idx}>
-                              <Typography variant="body2" sx={{ fontWeight: 600, color: houseColor }}>
-                                • {subject.title}
+                      {/* Planet(s) in this house: planet-in-house effects */}
+                      {planetHousePredictions.length > 0 && (
+                        <Box sx={{ mb: 2, p: 1.5, borderRadius: 1, backgroundColor: alpha(houseColor, 0.06) }}>
+                          <Typography
+                            variant="caption"
+                            sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: houseColor }}
+                          >
+                            Planet(s) in this House:
+                          </Typography>
+                          {planetHousePredictions.map(({ planet, text }) => (
+                            <Box key={planet} sx={{ mb: 1 }}>
+                              <Typography
+                                variant="body2"
+                                sx={{ fontWeight: 600, color: houseColor, mb: 0.25 }}
+                              >
+                                {planet.charAt(0).toUpperCase() + planet.slice(1)} in House {houseNum}
                               </Typography>
-                              <Typography variant="caption" color="text.secondary" sx={{ pl: 1, display: 'block' }}>
-                                {subject.items.slice(0, 2).join(', ')}
+                              <Typography variant="body2" color="text.secondary">
+                                {text}
                               </Typography>
-                            </Grid>
-                          ))}
-                        </Grid>
-                      </Box>
-                    )}
-
-                    {/* Predictions based on strength */}
-                    {houseData && (
-                      <Box sx={{ mt: 2, p: 1.5, borderRadius: 1, backgroundColor: isAfflicted ? alpha('#f44336', 0.1) : alpha('#4caf50', 0.1) }}>
-                        <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: isAfflicted ? '#f44336' : '#4caf50' }}>
-                          {isAfflicted ? '⚠️ Potential Challenges:' : '🌟 Positive Expression:'}
-                        </Typography>
-                        <Box component="ul" sx={{ m: 0, pl: 2 }}>
-                          {(isAfflicted ? houseData.negative : houseData.positive).slice(0, 3).map((item, idx) => (
-                            <li key={idx}>
-                              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
-                                {item}
-                              </Typography>
-                            </li>
+                            </Box>
                           ))}
                         </Box>
+                      )}
+                      
+                      {/* House Influence Summary */}
+                      <Box sx={{ mb: 2 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+                          Planetary Influences:
+                        </Typography>
+                        {planetsInHouse.length > 0 ? (
+                          <Typography variant="body2" color="text.secondary">
+                            Planets in house: <strong>{planetsInHouse.join(', ')}</strong>
+                          </Typography>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">
+                            No planets in this house
+                          </Typography>
+                        )}
+                        {aspectingPlanets.length > 0 && (
+                          <Typography variant="body2" color="text.secondary">
+                            Planets aspecting: <strong>{aspectingPlanets.join(', ')}</strong>
+                          </Typography>
+                        )}
+                        <Typography variant="body2" color="text.secondary">
+                          House lord ({houseLord}) is in {houseLordPos}
+                        </Typography>
                       </Box>
-                    )}
-                  </Box>
+
+                      {/* Main Subjects */}
+                      {houseData && houseData.mainSubjects && (
+                        <Box>
+                          <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+                            Main Subjects:
+                          </Typography>
+                          <Grid container spacing={1}>
+                            {houseData.mainSubjects.slice(0, 4).map((subject, idx) => (
+                              <Grid item xs={12} sm={6} key={idx}>
+                                <Typography variant="body2" sx={{ fontWeight: 600, color: houseColor }}>
+                                  • {subject.title}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" sx={{ pl: 1, display: 'block' }}>
+                                  {subject.items.slice(0, 2).join(', ')}
+                                </Typography>
+                              </Grid>
+                            ))}
+                          </Grid>
+                        </Box>
+                      )}
+                    </AccordionDetails>
+                  </Accordion>
                 );
               })}
             </Paper>
@@ -1980,7 +2033,7 @@ function CelebrityDetail() {
             <Typography variant="h6" gutterBottom>
               Planet-wise Predictions
             </Typography>
-          </Grid>
+            <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
           {Object.entries(celebrity.planets).map(([planet, data]) => {
             // 1. Lordship: which houses this planet lords
             const zodiacSigns = [
@@ -2068,67 +2121,88 @@ function CelebrityDetail() {
             const planetData = planetInfo[planet.toLowerCase()];
             const planetColor = getPlanetColor(planet);
             const textColor = getTextColor(planetColor);
-            
-            // Determine if planet is strong or afflicted
-            const isDebilitatedPlanet = isDebilitated(planet.charAt(0).toUpperCase() + planet.slice(1), data.sign);
             const isExaltedPlanet = isExalted(planet.toLowerCase(), data.sign);
-            const hasConjunctions = conjunctions.length > 0;
-            const hasAspects = aspectDetails.length > 0;
-            const isStrong = isExaltedPlanet || (lordHouses.length > 0 && !isDebilitatedPlanet);
-            const isAfflictedPlanet = isDebilitatedPlanet || (hasConjunctions && conjunctions.some(c => {
-              const otherPlanet = c.toLowerCase();
-              const maleficPlanets = ['mars', 'saturn', 'rahu', 'ketu'];
-              return maleficPlanets.includes(otherPlanet);
-            }));
+            const isDebilitatedPlanet = isDebilitated(planet.charAt(0).toUpperCase() + planet.slice(1), data.sign);
+            // Get personality prediction for this planet in this sign
+            const signTrait = planetInSignTraits[planet.toLowerCase()]?.[data.sign];
+            // Get planet-in-house prediction for this planet in its current house
+            const houseTrait = data.house ? planetInHouseEffects[planet.toLowerCase()]?.[data.house] : null;
 
             return (
-              <Grid item xs={12} key={planet}>
-                <Paper 
-                  elevation={1} 
-                  sx={{ 
-                    p: 2, 
-                    mb: 2, 
-                    border: `1px solid ${alpha(planetColor, 0.3)}`,
-                    backgroundColor: alpha(planetColor, 0.05)
-                  }}
+              <Accordion
+                key={planet}
+                sx={{
+                  mb: 1,
+                  border: `1px solid ${alpha(planetColor, 0.2)}`,
+                  borderRadius: '8px !important',
+                  backgroundColor: alpha(planetColor, 0.05),
+                  '&:before': { display: 'none' },
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{ '& .MuiAccordionSummary-content': { alignItems: 'center', my: 1 } }}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Box
                       sx={{
                         backgroundColor: planetColor,
                         color: textColor,
-                        width: 40,
-                        height: 40,
+                        width: 36,
+                        height: 36,
                         borderRadius: '50%',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         fontWeight: 'bold',
-                        fontSize: '0.9rem',
+                        fontSize: '0.85rem',
                       }}
                     >
                       {getPlanetAbbr(planet)}
                     </Box>
-                    <Box sx={{ flex: 1 }}>
+                    <Box>
                       <Typography variant="subtitle1" sx={{ fontWeight: 600, color: planetColor }}>
-                        {planetData?.name || planet.charAt(0).toUpperCase() + planet.slice(1)}
+                        {planetData?.name || planet.charAt(0).toUpperCase() + planet.slice(1)} in {data.sign}
                       </Typography>
-                      {planetData && (
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontStyle: 'italic' }}>
-                          {planetData.description}
-                        </Typography>
-                      )}
+                      <Typography variant="caption" color="text.secondary">
+                        {placement}
+                      </Typography>
                     </Box>
                     {isExaltedPlanet && (
-                      <Chip label="Exalted" size="small" color="success" variant="outlined" />
+                      <Chip label="Exalted" size="small" color="success" variant="outlined" sx={{ ml: 1 }} />
                     )}
                     {isDebilitatedPlanet && (
-                      <Chip label="Debilitated" size="small" color="error" variant="outlined" />
+                      <Chip label="Debilitated" size="small" color="error" variant="outlined" sx={{ ml: 1 }} />
                     )}
                   </Box>
+                </AccordionSummary>
+                <AccordionDetails sx={{ pt: 0 }}>
+                  {/* Personality Prediction (Planet in Sign) */}
+                  {signTrait && (
+                    <Box sx={{ mb: 2, p: 1.5, borderRadius: 1, backgroundColor: alpha(planetColor, 0.1) }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: planetColor }}>
+                        Personality Prediction:
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {signTrait}
+                      </Typography>
+                    </Box>
+                  )}
+
+                  {/* Planet in House Prediction */}
+                  {houseTrait && (
+                    <Box sx={{ mb: 2, p: 1.5, borderRadius: 1, backgroundColor: alpha(planetColor, 0.06) }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: planetColor }}>
+                        House Placement Prediction:
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {houseTrait}
+                      </Typography>
+                    </Box>
+                  )}
 
                   {/* Technical Details */}
-                  <Box sx={{ mb: 2, p: 1.5, backgroundColor: alpha(planetColor, 0.1), borderRadius: 1 }}>
+                  <Box sx={{ mb: 2, p: 1.5, backgroundColor: alpha(planetColor, 0.08), borderRadius: 1 }}>
                     <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
                       Technical Details:
                     </Typography>
@@ -2165,7 +2239,7 @@ function CelebrityDetail() {
 
                   {/* Main Subjects */}
                   {planetData && planetData.mainSubjects && (
-                    <Box sx={{ mb: 2 }}>
+                    <Box>
                       <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1, color: planetColor }}>
                         Main Subjects:
                       </Typography>
@@ -2183,28 +2257,12 @@ function CelebrityDetail() {
                       </Grid>
                     </Box>
                   )}
-
-                  {/* Predictions */}
-                  {planetData && (
-                    <Box sx={{ mt: 2, p: 1.5, borderRadius: 1, backgroundColor: isAfflictedPlanet ? alpha('#f44336', 0.1) : alpha('#4caf50', 0.1) }}>
-                      <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: isAfflictedPlanet ? '#f44336' : '#4caf50' }}>
-                        {isAfflictedPlanet ? '⚠️ Potential Challenges:' : '🌟 Positive Expression:'}
-                      </Typography>
-                      <Box component="ul" sx={{ m: 0, pl: 2 }}>
-                        {(isAfflictedPlanet ? planetData.negative : planetData.positive).slice(0, 3).map((item, idx) => (
-                          <li key={idx}>
-                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
-                              {item}
-                            </Typography>
-                          </li>
-                        ))}
-                      </Box>
-                    </Box>
-                  )}
-                </Paper>
-              </Grid>
+                </AccordionDetails>
+              </Accordion>
             );
           })}
+            </Paper>
+          </Grid>
 
           <Grid item xs={12}>
             <Divider sx={{ my: 3 }} />

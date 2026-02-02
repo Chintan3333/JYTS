@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { alpha } from '@mui/material/styles';
-import { planetInfo, houseInfo, zodiacSignInfo, getZodiacSignColor, getZodiacSignAbbr } from '../data/astrologyData';
+import { planetInfo, houseInfo, zodiacSignInfo, planetInSignTraits, houseLordInHouseEffects, planetInHouseEffects, getZodiacSignColor, getZodiacSignAbbr } from '../data/astrologyData';
 
 // Helper function to get planet abbreviation
 const getPlanetAbbr = (planet) => {
@@ -129,6 +129,66 @@ function PlanetInfo() {
                   </Box>
                 </AccordionSummary>
                 <AccordionDetails>
+                  {/* Planet in Sign Personality Traits */}
+                  {planetInSignTraits[planetKey] && (
+                    <Box sx={{ mb: 3, width: '100%' }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: planetColor }}>
+                        Personality Traits by Sign
+                      </Typography>
+                      <Grid container spacing={1}>
+                        {Object.entries(planetInSignTraits[planetKey]).map(([sign, trait]) => (
+                          <Grid item xs={12} sm={6} md={4} key={sign}>
+                            <Paper
+                              elevation={0}
+                              sx={{
+                                p: 1.5,
+                                border: `1px solid ${alpha(planetColor, 0.2)}`,
+                                borderRadius: 2,
+                                height: '100%',
+                              }}
+                            >
+                              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, color: planetColor }}>
+                                {info.name.split(' ')[0]} in {sign}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {trait}
+                              </Typography>
+                            </Paper>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </Box>
+                  )}
+                  {/* Planet in House Effects */}
+                  {planetInHouseEffects[planetKey] && (
+                    <Box sx={{ mb: 3, width: '100%' }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: planetColor }}>
+                        Planet in House Effects
+                      </Typography>
+                      <Grid container spacing={1}>
+                        {Object.entries(planetInHouseEffects[planetKey]).map(([houseNum, text]) => (
+                          <Grid item xs={12} sm={6} md={4} key={houseNum}>
+                            <Paper
+                              elevation={0}
+                              sx={{
+                                p: 1.5,
+                                border: `1px solid ${alpha(planetColor, 0.2)}`,
+                                borderRadius: 2,
+                                height: '100%',
+                              }}
+                            >
+                              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, color: planetColor }}>
+                                {info.name.split(' ')[0]} in House {houseNum}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {text}
+                              </Typography>
+                            </Paper>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </Box>
+                  )}
                   <Grid container spacing={3}>
                     {/* Main Subjects */}
                     <Grid item xs={12} md={8}>
@@ -285,6 +345,88 @@ function PlanetInfo() {
               </Accordion>
             );
           })}
+        </Box>
+
+        <Divider sx={{ my: 6 }} />
+
+        {/* House Lord Effects Section */}
+        <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 1, mt: 2 }}>
+          House Lord Effects
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+          Effects of each house lord placed in each house (classical paragraph-style reference)
+        </Typography>
+
+        <Box>
+          {Array.from({ length: 12 }, (_, i) => i + 1).map((lordHouseNum) => (
+            <Accordion key={lordHouseNum} sx={{ mb: 2 }}>
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                sx={{
+                  backgroundColor: alpha(getHouseColor(lordHouseNum), 0.1),
+                  '&:hover': { backgroundColor: alpha(getHouseColor(lordHouseNum), 0.15) },
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                  <Box
+                    sx={{
+                      backgroundColor: getHouseColor(lordHouseNum),
+                      color: getTextColor(getHouseColor(lordHouseNum)),
+                      width: 50,
+                      height: 50,
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 'bold',
+                      fontSize: '1.1rem',
+                    }}
+                  >
+                    {lordHouseNum}
+                  </Box>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {lordHouseNum} House Lord in Different Houses
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Click to view outcomes for placement in House 1–12
+                    </Typography>
+                  </Box>
+                </Box>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Grid container spacing={2}>
+                  {Array.from({ length: 12 }, (_, j) => j + 1).map((placementHouseNum) => {
+                    const text = houseLordInHouseEffects?.[lordHouseNum]?.[placementHouseNum];
+                    if (!text) return null;
+                    return (
+                      <Grid item xs={12} md={6} key={placementHouseNum}>
+                        <Paper
+                          elevation={0}
+                          sx={{
+                            p: 2,
+                            border: `1px solid ${alpha(getHouseColor(lordHouseNum), 0.2)}`,
+                            borderRadius: 2,
+                            height: '100%',
+                          }}
+                        >
+                          <Typography
+                            variant="subtitle1"
+                            sx={{ fontWeight: 700, mb: 1, color: getHouseColor(lordHouseNum) }}
+                          >
+                            {lordHouseNum} Lord in House {placementHouseNum}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {text}
+                          </Typography>
+                        </Paper>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              </AccordionDetails>
+            </Accordion>
+          ))}
         </Box>
 
         <Divider sx={{ my: 6 }} />
