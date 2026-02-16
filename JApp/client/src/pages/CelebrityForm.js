@@ -28,6 +28,7 @@ function CelebrityForm() {
     birthTime: '12:00',
     birthPlace: 'Surat',
     category: 'Business',
+    timeZone: '+05:30',
     dataAccuracy: 'good',
     ascendant: {
       sign: '',
@@ -183,6 +184,16 @@ function CelebrityForm() {
                 label="Birth Place"
                 name="birthPlace"
                 value={formData.birthPlace}
+                onChange={handleChange}
+                required
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Time Zone"
+                name="timeZone"
+                value={formData.timeZone}
                 onChange={handleChange}
                 required
               />

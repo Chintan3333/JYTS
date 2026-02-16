@@ -22,6 +22,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import InfoIcon from '@mui/icons-material/Info';
 import { alpha } from '@mui/material/styles';
+import { EclipticGeoMoon, EclipticLongitude, MakeTime } from 'astronomy-engine';
 
 // Helper function to get zodiac sign number
 const getZodiacNumber = (sign) => {
@@ -528,7 +529,7 @@ const checkWealthYogas = (planets, ascendant) => {
   const wealthHouseLords = wealthHouses.map(house => ({
     house,
     lord: getHouseLord(house),
-    position: Object.entries(planets).find(([planet, _]) => 
+    position: Object.entries(planets).find(([planet, _]) =>
       planet.toLowerCase() === getHouseLord(house).toLowerCase()
     )
   }));
@@ -538,11 +539,11 @@ const checkWealthYogas = (planets, ascendant) => {
   wealthHouseLords.forEach(({ house: house1, lord: lord1, position: pos1 }, index1) => {
     if (!pos1) return;
     const [planet1, data1] = pos1;
-    
+
     wealthHouseLords.slice(index1 + 1).forEach(({ house: house2, lord: lord2, position: pos2 }) => {
       if (!pos2) return;
       const [planet2, data2] = pos2;
-      
+
       if (isConjunction(data1.sign, data2.sign)) {
         // Add both lords to the conjunction group if not already present
         if (!conjunctLords.some(group => group.includes(lord1))) {
@@ -551,7 +552,7 @@ const checkWealthYogas = (planets, ascendant) => {
         if (!conjunctLords.some(group => group.includes(lord2))) {
           conjunctLords.push([lord2]);
         }
-        
+
         // Merge groups if they contain either lord
         const group1 = conjunctLords.find(group => group.includes(lord1));
         const group2 = conjunctLords.find(group => group.includes(lord2));
@@ -568,10 +569,10 @@ const checkWealthYogas = (planets, ascendant) => {
   // Add wealth yoga for groups of 3 or more conjunct lords
   conjunctLords.forEach(group => {
     if (group.length >= 3) {
-      const houses = group.map(lord => 
+      const houses = group.map(lord =>
         wealthHouseLords.find(({ lord: l }) => l === lord)?.house
       ).filter(Boolean);
-      
+
       wealthYogas.push({
         name: 'Multiple Wealth House Lords Conjunction Yoga',
         planets: group,
@@ -587,30 +588,30 @@ const checkWealthYogas = (planets, ascendant) => {
     const [lordPlanet, lordData] = position;
 
     // Check if this lord is placed in any wealth house
-    if (wealthHouses.includes(lordData.house) && 
-        (!isDebilitated(lordPlanet, lordData.sign) || isDebilitationBroken(lordPlanet, planets))) {
+    if (wealthHouses.includes(lordData.house) &&
+      (!isDebilitated(lordPlanet, lordData.sign) || isDebilitationBroken(lordPlanet, planets))) {
       wealthYogas.push({
         name: `${lordHouse}th House Lord in ${lordData.house}th House Wealth Yoga`,
         planets: [lord],
         type: 'Wealth',
-        description: `Indicates wealth through ${lordData.house === 2 ? 'accumulation' : 
-          lordData.house === 5 ? 'investments and speculation' : 
-          lordData.house === 8 ? 'inheritance and insurance' : 
-          'income and gains'}. The placement of ${lordHouse}th house lord in ${lordData.house}th house creates a powerful wealth combination.`
+        description: `Indicates wealth through ${lordData.house === 2 ? 'accumulation' :
+          lordData.house === 5 ? 'investments and speculation' :
+            lordData.house === 8 ? 'inheritance and insurance' :
+              'income and gains'}. The placement of ${lordHouse}th house lord in ${lordData.house}th house creates a powerful wealth combination.`
       });
     }
 
     // Check if this lord is exalted
     if (isExalted(lordPlanet, lordData.sign) ||
-        (!isDebilitated(lordPlanet, lordData.sign) && isDebilitationBroken(lordPlanet, planets))) {
+      (!isDebilitated(lordPlanet, lordData.sign) && isDebilitationBroken(lordPlanet, planets))) {
       wealthYogas.push({
         name: `Exalted ${lordHouse}th House Lord Wealth Yoga`,
         planets: [lord],
         type: 'Wealth',
-        description: `Indicates exceptional wealth through ${lordHouse === 2 ? 'accumulation and savings' : 
-          lordHouse === 5 ? 'investments and creative ventures' : 
-          lordHouse === 8 ? 'inheritance and hidden sources' : 
-          'income and fulfillment of desires'}. The exalted ${lordHouse}th house lord brings powerful wealth-generating capabilities.`
+        description: `Indicates exceptional wealth through ${lordHouse === 2 ? 'accumulation and savings' :
+          lordHouse === 5 ? 'investments and creative ventures' :
+            lordHouse === 8 ? 'inheritance and hidden sources' :
+              'income and fulfillment of desires'}. The exalted ${lordHouse}th house lord brings powerful wealth-generating capabilities.`
       });
     }
   });
@@ -618,16 +619,16 @@ const checkWealthYogas = (planets, ascendant) => {
   // Check for exalted planets in wealth houses
   Object.entries(planets).forEach(([planet, data]) => {
     if (wealthHouses.includes(data.house) &&
-        (isExalted(planet, data.sign) ||
-         (!isDebilitated(planet, data.sign) && isDebilitationBroken(planet, planets)))) {
+      (isExalted(planet, data.sign) ||
+        (!isDebilitated(planet, data.sign) && isDebilitationBroken(planet, planets)))) {
       wealthYogas.push({
         name: `Exalted ${planet.charAt(0).toUpperCase() + planet.slice(1)} in ${data.house}th House Wealth Yoga`,
         planets: [planet.charAt(0).toUpperCase() + planet.slice(1)],
         type: 'Wealth',
-        description: `Indicates exceptional financial benefits through ${data.house === 2 ? 'accumulation and savings' : 
-          data.house === 5 ? 'investments and speculation' : 
-          data.house === 8 ? 'inheritance and insurance' : 
-          'income and gains'}. The exalted ${planet} in ${data.house}th house brings powerful wealth-generating capabilities.`
+        description: `Indicates exceptional financial benefits through ${data.house === 2 ? 'accumulation and savings' :
+          data.house === 5 ? 'investments and speculation' :
+            data.house === 8 ? 'inheritance and insurance' :
+              'income and gains'}. The exalted ${planet} in ${data.house}th house brings powerful wealth-generating capabilities.`
       });
     }
   });
@@ -674,7 +675,7 @@ const getLordOfSign = (sign) => {
 const checkKendraTrikonRajyoga = (planets, ascendant) => {
   const kendraHouses = [1, 4, 7, 10];
   const trikonHouses = [1, 5, 9];
-  
+
   // Get house lords
   const getHouseLord = (houseNumber) => {
     const sign = getSignForHouse(houseNumber, ascendant.sign);
@@ -740,6 +741,7 @@ const checkKendraTrikonRajyoga = (planets, ascendant) => {
     });
   });
 
+
   // Remove duplicate yogas (same planets and houses in different order)
   const uniqueYogas = yogas.filter((yoga, index, self) =>
     index === self.findIndex((y) => (
@@ -749,6 +751,149 @@ const checkKendraTrikonRajyoga = (planets, ascendant) => {
   );
 
   return uniqueYogas;
+};
+
+const nakshatras = [
+  "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra",
+  "Punarvasu", "Pushya", "Ashlesha", "Magha", "PurvaPhalguni",
+  "UttaraPhalguni", "Hasta", "Chitra", "Swati", "Vishakha",
+  "Anuradha", "Jyeshtha", "Mula", "PurvaAshadha", "UttaraAshadha",
+  "Shravana", "Dhanishta", "Shatabhisha", "PurvaBhadrapada",
+  "UttaraBhadrapada", "Revati"
+];
+
+const nakshatraLord = {
+  Ashwini: "Ketu", Bharani: "Venus", Krittika: "Sun",
+  Rohini: "Moon", Mrigashira: "Mars", Ardra: "Rahu",
+  Punarvasu: "Jupiter", Pushya: "Saturn", Ashlesha: "Mercury",
+  Magha: "Ketu", PurvaPhalguni: "Venus", UttaraPhalguni: "Sun",
+  Hasta: "Moon", Chitra: "Mars", Swati: "Rahu",
+  Vishakha: "Jupiter", Anuradha: "Saturn", Jyeshtha: "Mercury",
+  Mula: "Ketu", PurvaAshadha: "Venus", UttaraAshadha: "Sun",
+  Shravana: "Moon", Dhanishta: "Mars", Shatabhisha: "Rahu",
+  PurvaBhadrapada: "Jupiter", UttaraBhadrapada: "Saturn",
+  Revati: "Mercury"
+};
+
+const zodiac = [
+  "Aries", "Taurus", "Gemini", "Cancer",
+  "Leo", "Virgo", "Libra", "Scorpio",
+  "Sagittarius", "Capricorn", "Aquarius", "Pisces"
+];
+
+const dashaOrder = [
+  "Ketu", "Venus", "Sun", "Moon", "Mars",
+  "Rahu", "Jupiter", "Saturn", "Mercury"
+];
+
+const dashaYears = {
+  Ketu: 7,
+  Venus: 20,
+  Sun: 6,
+  Moon: 10,
+  Mars: 7,
+  Rahu: 18,
+  Jupiter: 16,
+  Saturn: 19,
+  Mercury: 17
+};
+
+
+function calculateMahadasha(birthDate, nakshatra, degreeInsideNakshatra) {
+
+  const nakSize = 13 + 20 / 60;
+  const remainingFraction = (nakSize - degreeInsideNakshatra) / nakSize;
+
+  const startLord = nakshatraLord[nakshatra];
+  const startYears = dashaYears[startLord];
+
+  let remainingYears = startYears * remainingFraction;
+
+  const results = [];
+
+  let currentDate = new Date(birthDate);
+
+  // first dasha (partial)
+  currentDate.setFullYear(currentDate.getFullYear() + remainingYears);
+
+  results.push({
+    planet: startLord,
+    end: new Date(currentDate)
+  });
+
+  // remaining dashas
+  let index = dashaOrder.indexOf(startLord);
+
+  for (let i = 1; i < dashaOrder.length; i++) {
+    index = (index + 1) % dashaOrder.length;
+
+    const planet = dashaOrder[index];
+    const years = dashaYears[planet];
+
+    currentDate.setFullYear(currentDate.getFullYear() + years);
+
+    results.push({
+      planet,
+      end: new Date(currentDate)
+    });
+  }
+  console.log('results of dasha', results);
+
+
+  return results;
+}
+
+
+function lahiriAyanamsa(date) {
+  const year = date.getUTCFullYear();
+  return 24 + (year - 2000) * 0.01397;
+
+  // const jd = MakeTime(date).tt + 2400000.5;
+  // return 22.460148 + 1.396042 * (jd - 2451545.0) / 36525;
+}
+
+
+const checkPlanetNakshatraDetails = (date, planet) => {
+  //console.log('date & time', date, planet);
+  let ecl = null;
+  if (planet == 'Moon') {
+    // Moon geocentric ecliptic longitude
+    ecl = EclipticGeoMoon(date);
+    ecl = ecl.lon;
+  } else {
+    ecl = EclipticLongitude(planet, date);
+  }
+
+  const ayanamsa = lahiriAyanamsa(date);
+
+  const planetLongitude = (ecl - ayanamsa + 360) % 360 / 30;
+  //const planetLongitude = ecl / 30;
+  //console.log('moon data', ecl, planetLongitude);
+
+
+  // Zodiac sign
+  const signIndex = Math.floor(planetLongitude);
+
+  // Nakshatra calculation
+  const nakSize = 13 + 20 / 60; // 13.333°
+  const nakIndex = Math.floor(planetLongitude * 30 / nakSize);
+
+  const degreeInsideNakshatra = planetLongitude * 30 % nakSize;
+  const degreeInsideZodiac = planetLongitude * 30 % 30;
+
+  // Pada
+  const padaSize = 3 + 20 / 60;
+  const pada = Math.floor(degreeInsideNakshatra / padaSize) + 1;
+  console.log('moon data 2', signIndex, nakSize, nakIndex, degreeInsideNakshatra, padaSize, pada, zodiac[signIndex], nakshatras[nakIndex]);
+
+  return {
+    planetLongitude: (planetLongitude * 30).toFixed(4),
+    zodiacSign: zodiac[signIndex],
+    nakshatra: nakshatras[nakIndex],
+    degreeInsideZodiac: degreeInsideZodiac.toFixed(4),
+    degreeInsideNakshatra: degreeInsideNakshatra.toFixed(4),
+    pada
+  }
 };
 
 function CelebrityDetail() {
@@ -871,6 +1016,24 @@ function CelebrityDetail() {
   // Calculate Vipreet Rajyoga
   const vipreetYogas = checkVipreetRajyoga(celebrity.planets, celebrity.ascendant.sign);
 
+  //Calculate Moon Nakshtra Details
+
+  const nakshatraPlanets = ['Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn'];
+  const planetNakshatraDetails = {};
+  nakshatraPlanets.forEach((planet) => {
+    planetNakshatraDetails[planet] = checkPlanetNakshatraDetails(new Date(`${celebrity.birthDate.split("T")[0]}T${celebrity.birthTime}:00${celebrity.timeZone}`), planet);
+  })
+
+  let mahaDashaPeriods = [];
+  let moonNakshatraDetails = checkPlanetNakshatraDetails(new Date(`${celebrity.birthDate.split("T")[0]}T${celebrity.birthTime}:00${celebrity.timeZone}`), 'Moon');
+  mahaDashaPeriods = calculateMahadasha(
+    new Date(`${celebrity.birthDate.split("T")[0]}T${celebrity.birthTime}:00${celebrity.timeZone}`),
+    moonNakshatraDetails.nakshatra,
+    moonNakshatraDetails.degreeInsideNakshatra)
+
+
+
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Paper elevation={3} sx={{ p: { xs: 2, md: 4 } }}>
@@ -919,12 +1082,20 @@ function CelebrityDetail() {
               {celebrity.birthTime}
             </Typography>
           </Grid>
-          <Grid item xs={12}>
+          <Grid item xs={12} sm={6}>
             <Typography variant="subtitle2" color="text.secondary">
               Birth Place
             </Typography>
             <Typography variant="body1">
               {celebrity.birthPlace}
+            </Typography>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Time Zone
+            </Typography>
+            <Typography variant="body1">
+              {celebrity.timeZone}
             </Typography>
           </Grid>
           <Grid item xs={12}>
@@ -1508,7 +1679,65 @@ function CelebrityDetail() {
             <Divider sx={{ my: 3 }} />
           </Grid>
 
-         
+
+          <Grid item xs={12}>
+            <Typography variant="h6" gutterBottom>
+              Nakshatra
+            </Typography>
+          </Grid>
+
+          {nakshatraPlanets.map((planet) => {
+            return (
+              <Grid item xs={4}>
+                <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
+                  <Typography variant="body1">
+                    Planet = {planet}
+                  </Typography>
+                  <Typography variant="body1">
+                    Longitude = {planetNakshatraDetails[planet].planetLongitude}
+                  </Typography>
+                  <Typography variant="body1">
+                    Sign = {planetNakshatraDetails[planet].zodiacSign}
+                  </Typography>
+                  <Typography variant="body1">
+                    Nakshatra = {planetNakshatraDetails[planet].nakshatra}
+                  </Typography>
+                  <Typography variant="body1">
+                    Degree Inside Sign = {planetNakshatraDetails[planet].degreeInsideZodiac}
+                  </Typography>
+                  <Typography variant="body1">
+                    Degree Inside Nakshatra = {planetNakshatraDetails[planet].degreeInsideNakshatra}
+                  </Typography>
+                  <Typography variant="body1">
+                    Pada = {planetNakshatraDetails[planet].pada}
+                  </Typography>
+                </Paper>
+              </Grid>)
+          })}
+
+          <Grid item xs={12}>
+            <Typography variant="h6" gutterBottom>
+              Maha Dasha
+            </Typography>
+          </Grid>
+
+          {mahaDashaPeriods.map((mahaDasha) => {
+            return (
+              <Grid item xs={12}>
+                <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
+                  <Typography variant="body1">
+                    Planet : {mahaDasha.planet}
+                  </Typography>
+                  <Typography variant="body1">
+                    End Date : {mahaDasha.end.toLocaleString()}
+                  </Typography>
+                </Paper>
+              </Grid>
+            )
+          })}
+
+
+
 
           {/* Yogas and Doshas Section */}
           <Grid item xs={12}>
@@ -1646,9 +1875,9 @@ function CelebrityDetail() {
                           <Typography variant="subtitle1" sx={{ fontWeight: 600, mr: 1 }}>
                             {yoga.planets.join(', ')}
                           </Typography>
-                          <Chip 
-                            label={yoga.type} 
-                            size="small" 
+                          <Chip
+                            label={yoga.type}
+                            size="small"
                             color="success"
                             variant="outlined"
                           />
@@ -1836,7 +2065,7 @@ function CelebrityDetail() {
             <Divider sx={{ my: 3 }} />
           </Grid>
 
-           {/* Predictions Section */}
+          {/* Predictions Section */}
           <Grid item xs={12}>
             <Typography variant="h6" gutterBottom>
               House-wise Predictions
@@ -1902,7 +2131,7 @@ function CelebrityDetail() {
                 // Get house information
                 const houseData = houseInfo[houseNum];
                 const houseColor = getPlanetColor(houseLord?.toLowerCase() || 'sun');
-                
+
                 return (
                   <Accordion
                     key={houseNum}
@@ -1976,7 +2205,7 @@ function CelebrityDetail() {
                           ))}
                         </Box>
                       )}
-                      
+
                       {/* House Influence Summary */}
                       <Box sx={{ mb: 2 }}>
                         <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
@@ -2034,233 +2263,233 @@ function CelebrityDetail() {
               Planet-wise Predictions
             </Typography>
             <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
-          {Object.entries(celebrity.planets).map(([planet, data]) => {
-            // 1. Lordship: which houses this planet lords
-            const zodiacSigns = [
-              'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
-              'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
-            ];
-            const ascendantSign = celebrity.ascendant.sign;
-            const ascendantIndex = zodiacSigns.indexOf(ascendantSign);
-            const signLords = {
-              'Aries': 'mars',
-              'Taurus': 'venus',
-              'Gemini': 'mercury',
-              'Cancer': 'moon',
-              'Leo': 'sun',
-              'Virgo': 'mercury',
-              'Libra': 'venus',
-              'Scorpio': 'mars',
-              'Sagittarius': 'jupiter',
-              'Capricorn': 'saturn',
-              'Aquarius': 'saturn',
-              'Pisces': 'jupiter'
-            };
-            // Find all houses where this planet is lord
-            const lordHouses = [];
-            for (let i = 0; i < 12; i++) {
-              const houseNum = i + 1;
-              const signIndex = (ascendantIndex + i) % 12;
-              const sign = zodiacSigns[signIndex];
-              if (signLords[sign] === planet) {
-                lordHouses.push(houseNum);
-              }
-            }
+              {Object.entries(celebrity.planets).map(([planet, data]) => {
+                // 1. Lordship: which houses this planet lords
+                const zodiacSigns = [
+                  'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
+                  'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
+                ];
+                const ascendantSign = celebrity.ascendant.sign;
+                const ascendantIndex = zodiacSigns.indexOf(ascendantSign);
+                const signLords = {
+                  'Aries': 'mars',
+                  'Taurus': 'venus',
+                  'Gemini': 'mercury',
+                  'Cancer': 'moon',
+                  'Leo': 'sun',
+                  'Virgo': 'mercury',
+                  'Libra': 'venus',
+                  'Scorpio': 'mars',
+                  'Sagittarius': 'jupiter',
+                  'Capricorn': 'saturn',
+                  'Aquarius': 'saturn',
+                  'Pisces': 'jupiter'
+                };
+                // Find all houses where this planet is lord
+                const lordHouses = [];
+                for (let i = 0; i < 12; i++) {
+                  const houseNum = i + 1;
+                  const signIndex = (ascendantIndex + i) % 12;
+                  const sign = zodiacSigns[signIndex];
+                  if (signLords[sign] === planet) {
+                    lordHouses.push(houseNum);
+                  }
+                }
 
-            // 2. Placement
-            const placement = data.house && data.sign ? `House ${data.house}, ${data.sign}` : 'Unknown';
+                // 2. Placement
+                const placement = data.house && data.sign ? `House ${data.house}, ${data.sign}` : 'Unknown';
 
-            // 3. Aspects (Vedic aspects)
-            const aspects = [];
-            if (data.house) {
-              const from = data.house;
-              // All planets aspect 7th from their position
-              aspects.push({
-                house: ((from - 1 + 6) % 12) + 1,
-                type: '7th aspect'
-              });
-              // Special aspects
-              if (planet === 'mars') {
-                aspects.push({ house: ((from - 1 + 3) % 12) + 1, type: '4th aspect' });
-                aspects.push({ house: ((from - 1 + 7) % 12) + 1, type: '8th aspect' });
-              } else if (planet === 'jupiter') {
-                aspects.push({ house: ((from - 1 + 4) % 12) + 1, type: '5th aspect' });
-                aspects.push({ house: ((from - 1 + 8) % 12) + 1, type: '9th aspect' });
-              } else if (planet === 'saturn') {
-                aspects.push({ house: ((from - 1 + 2) % 12) + 1, type: '3rd aspect' });
-                aspects.push({ house: ((from - 1 + 9) % 12) + 1, type: '10th aspect' });
-              } else if (planet === 'rahu' || planet === 'ketu') {
-                aspects.push({ house: ((from - 1 + 4) % 12) + 1, type: '5th aspect' });
-                aspects.push({ house: ((from - 1 + 8) % 12) + 1, type: '9th aspect' });
-              }
-            }
-            // Map aspect houses to signs
-            const aspectDetails = aspects.map(a => {
-              const signIndex = (ascendantIndex + a.house - 1) % 12;
-              return `House ${a.house} (${zodiacSigns[signIndex]}) [${a.type}]`;
-            });
+                // 3. Aspects (Vedic aspects)
+                const aspects = [];
+                if (data.house) {
+                  const from = data.house;
+                  // All planets aspect 7th from their position
+                  aspects.push({
+                    house: ((from - 1 + 6) % 12) + 1,
+                    type: '7th aspect'
+                  });
+                  // Special aspects
+                  if (planet === 'mars') {
+                    aspects.push({ house: ((from - 1 + 3) % 12) + 1, type: '4th aspect' });
+                    aspects.push({ house: ((from - 1 + 7) % 12) + 1, type: '8th aspect' });
+                  } else if (planet === 'jupiter') {
+                    aspects.push({ house: ((from - 1 + 4) % 12) + 1, type: '5th aspect' });
+                    aspects.push({ house: ((from - 1 + 8) % 12) + 1, type: '9th aspect' });
+                  } else if (planet === 'saturn') {
+                    aspects.push({ house: ((from - 1 + 2) % 12) + 1, type: '3rd aspect' });
+                    aspects.push({ house: ((from - 1 + 9) % 12) + 1, type: '10th aspect' });
+                  } else if (planet === 'rahu' || planet === 'ketu') {
+                    aspects.push({ house: ((from - 1 + 4) % 12) + 1, type: '5th aspect' });
+                    aspects.push({ house: ((from - 1 + 8) % 12) + 1, type: '9th aspect' });
+                  }
+                }
+                // Map aspect houses to signs
+                const aspectDetails = aspects.map(a => {
+                  const signIndex = (ascendantIndex + a.house - 1) % 12;
+                  return `House ${a.house} (${zodiacSigns[signIndex]}) [${a.type}]`;
+                });
 
-            // 4. Connections
-            // a) Conjunctions (same sign)
-            const conjunctions = Object.entries(celebrity.planets)
-              .filter(([other, d]) => other !== planet && d.sign === data.sign)
-              .map(([other]) => other.charAt(0).toUpperCase() + other.slice(1));
-            // b) Aspects (other planets aspected by this planet)
-            const aspectedPlanets = Object.entries(celebrity.planets)
-              .filter(([other, d]) => {
-                if (other === planet || !d.house) return false;
-                return aspects.some(a => d.house === ((data.house -1 + (parseInt(a.type)) || 6) % 12));
-              })
-              .map(([other]) => other.charAt(0).toUpperCase() + other.slice(1));
-            // c) Sign exchanges (mutual reception)
-            const signExchanges = Object.entries(celebrity.planets)
-              .filter(([other, d]) => other !== planet && signLords[d.sign] === planet && signLords[data.sign] === other)
-              .map(([other]) => other.charAt(0).toUpperCase() + other.slice(1));
+                // 4. Connections
+                // a) Conjunctions (same sign)
+                const conjunctions = Object.entries(celebrity.planets)
+                  .filter(([other, d]) => other !== planet && d.sign === data.sign)
+                  .map(([other]) => other.charAt(0).toUpperCase() + other.slice(1));
+                // b) Aspects (other planets aspected by this planet)
+                const aspectedPlanets = Object.entries(celebrity.planets)
+                  .filter(([other, d]) => {
+                    if (other === planet || !d.house) return false;
+                    return aspects.some(a => d.house === ((data.house - 1 + (parseInt(a.type)) || 6) % 12));
+                  })
+                  .map(([other]) => other.charAt(0).toUpperCase() + other.slice(1));
+                // c) Sign exchanges (mutual reception)
+                const signExchanges = Object.entries(celebrity.planets)
+                  .filter(([other, d]) => other !== planet && signLords[d.sign] === planet && signLords[data.sign] === other)
+                  .map(([other]) => other.charAt(0).toUpperCase() + other.slice(1));
 
-            // Get planet information
-            const planetData = planetInfo[planet.toLowerCase()];
-            const planetColor = getPlanetColor(planet);
-            const textColor = getTextColor(planetColor);
-            const isExaltedPlanet = isExalted(planet.toLowerCase(), data.sign);
-            const isDebilitatedPlanet = isDebilitated(planet.charAt(0).toUpperCase() + planet.slice(1), data.sign);
-            // Get personality prediction for this planet in this sign
-            const signTrait = planetInSignTraits[planet.toLowerCase()]?.[data.sign];
-            // Get planet-in-house prediction for this planet in its current house
-            const houseTrait = data.house ? planetInHouseEffects[planet.toLowerCase()]?.[data.house] : null;
+                // Get planet information
+                const planetData = planetInfo[planet.toLowerCase()];
+                const planetColor = getPlanetColor(planet);
+                const textColor = getTextColor(planetColor);
+                const isExaltedPlanet = isExalted(planet.toLowerCase(), data.sign);
+                const isDebilitatedPlanet = isDebilitated(planet.charAt(0).toUpperCase() + planet.slice(1), data.sign);
+                // Get personality prediction for this planet in this sign
+                const signTrait = planetInSignTraits[planet.toLowerCase()]?.[data.sign];
+                // Get planet-in-house prediction for this planet in its current house
+                const houseTrait = data.house ? planetInHouseEffects[planet.toLowerCase()]?.[data.house] : null;
 
-            return (
-              <Accordion
-                key={planet}
-                sx={{
-                  mb: 1,
-                  border: `1px solid ${alpha(planetColor, 0.2)}`,
-                  borderRadius: '8px !important',
-                  backgroundColor: alpha(planetColor, 0.05),
-                  '&:before': { display: 'none' },
-                }}
-              >
-                <AccordionSummary
-                  expandIcon={<ExpandMoreIcon />}
-                  sx={{ '& .MuiAccordionSummary-content': { alignItems: 'center', my: 1 } }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Box
-                      sx={{
-                        backgroundColor: planetColor,
-                        color: textColor,
-                        width: 36,
-                        height: 36,
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 'bold',
-                        fontSize: '0.85rem',
-                      }}
+                return (
+                  <Accordion
+                    key={planet}
+                    sx={{
+                      mb: 1,
+                      border: `1px solid ${alpha(planetColor, 0.2)}`,
+                      borderRadius: '8px !important',
+                      backgroundColor: alpha(planetColor, 0.05),
+                      '&:before': { display: 'none' },
+                    }}
+                  >
+                    <AccordionSummary
+                      expandIcon={<ExpandMoreIcon />}
+                      sx={{ '& .MuiAccordionSummary-content': { alignItems: 'center', my: 1 } }}
                     >
-                      {getPlanetAbbr(planet)}
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 600, color: planetColor }}>
-                        {planetData?.name || planet.charAt(0).toUpperCase() + planet.slice(1)} in {data.sign}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {placement}
-                      </Typography>
-                    </Box>
-                    {isExaltedPlanet && (
-                      <Chip label="Exalted" size="small" color="success" variant="outlined" sx={{ ml: 1 }} />
-                    )}
-                    {isDebilitatedPlanet && (
-                      <Chip label="Debilitated" size="small" color="error" variant="outlined" sx={{ ml: 1 }} />
-                    )}
-                  </Box>
-                </AccordionSummary>
-                <AccordionDetails sx={{ pt: 0 }}>
-                  {/* Personality Prediction (Planet in Sign) */}
-                  {signTrait && (
-                    <Box sx={{ mb: 2, p: 1.5, borderRadius: 1, backgroundColor: alpha(planetColor, 0.1) }}>
-                      <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: planetColor }}>
-                        Personality Prediction:
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {signTrait}
-                      </Typography>
-                    </Box>
-                  )}
-
-                  {/* Planet in House Prediction */}
-                  {houseTrait && (
-                    <Box sx={{ mb: 2, p: 1.5, borderRadius: 1, backgroundColor: alpha(planetColor, 0.06) }}>
-                      <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: planetColor }}>
-                        House Placement Prediction:
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {houseTrait}
-                      </Typography>
-                    </Box>
-                  )}
-
-                  {/* Technical Details */}
-                  <Box sx={{ mb: 2, p: 1.5, backgroundColor: alpha(planetColor, 0.08), borderRadius: 1 }}>
-                    <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
-                      Technical Details:
-                    </Typography>
-                    <Grid container spacing={1}>
-                      <Grid item xs={12} sm={6}>
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>Lords of Houses:</strong> {lordHouses.length > 0 ? lordHouses.map(h => `House ${h}`).join(', ') : 'None'}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>Placement:</strong> {placement}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>Aspects:</strong> {aspectDetails.length > 0 ? aspectDetails.join('; ') : 'None'}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>Conjunctions:</strong> {conjunctions.length > 0 ? conjunctions.join(', ') : 'None'}
-                        </Typography>
-                      </Grid>
-                      {signExchanges.length > 0 && (
-                        <Grid item xs={12}>
-                          <Typography variant="body2" color="text.secondary">
-                            <strong>Sign Exchanges:</strong> {signExchanges.join(', ')}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Box
+                          sx={{
+                            backgroundColor: planetColor,
+                            color: textColor,
+                            width: 36,
+                            height: 36,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 'bold',
+                            fontSize: '0.85rem',
+                          }}
+                        >
+                          {getPlanetAbbr(planet)}
+                        </Box>
+                        <Box>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: planetColor }}>
+                            {planetData?.name || planet.charAt(0).toUpperCase() + planet.slice(1)} in {data.sign}
                           </Typography>
-                        </Grid>
+                          <Typography variant="caption" color="text.secondary">
+                            {placement}
+                          </Typography>
+                        </Box>
+                        {isExaltedPlanet && (
+                          <Chip label="Exalted" size="small" color="success" variant="outlined" sx={{ ml: 1 }} />
+                        )}
+                        {isDebilitatedPlanet && (
+                          <Chip label="Debilitated" size="small" color="error" variant="outlined" sx={{ ml: 1 }} />
+                        )}
+                      </Box>
+                    </AccordionSummary>
+                    <AccordionDetails sx={{ pt: 0 }}>
+                      {/* Personality Prediction (Planet in Sign) */}
+                      {signTrait && (
+                        <Box sx={{ mb: 2, p: 1.5, borderRadius: 1, backgroundColor: alpha(planetColor, 0.1) }}>
+                          <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: planetColor }}>
+                            Personality Prediction:
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {signTrait}
+                          </Typography>
+                        </Box>
                       )}
-                    </Grid>
-                  </Box>
 
-                  {/* Main Subjects */}
-                  {planetData && planetData.mainSubjects && (
-                    <Box>
-                      <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1, color: planetColor }}>
-                        Main Subjects:
-                      </Typography>
-                      <Grid container spacing={1}>
-                        {planetData.mainSubjects.slice(0, 4).map((subject, idx) => (
-                          <Grid item xs={12} sm={6} key={idx}>
-                            <Typography variant="body2" sx={{ fontWeight: 600, color: planetColor }}>
-                              • {subject.title}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ pl: 1, display: 'block' }}>
-                              {subject.items.slice(0, 2).join(', ')}
+                      {/* Planet in House Prediction */}
+                      {houseTrait && (
+                        <Box sx={{ mb: 2, p: 1.5, borderRadius: 1, backgroundColor: alpha(planetColor, 0.06) }}>
+                          <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: planetColor }}>
+                            House Placement Prediction:
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {houseTrait}
+                          </Typography>
+                        </Box>
+                      )}
+
+                      {/* Technical Details */}
+                      <Box sx={{ mb: 2, p: 1.5, backgroundColor: alpha(planetColor, 0.08), borderRadius: 1 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+                          Technical Details:
+                        </Typography>
+                        <Grid container spacing={1}>
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>Lords of Houses:</strong> {lordHouses.length > 0 ? lordHouses.map(h => `House ${h}`).join(', ') : 'None'}
                             </Typography>
                           </Grid>
-                        ))}
-                      </Grid>
-                    </Box>
-                  )}
-                </AccordionDetails>
-              </Accordion>
-            );
-          })}
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>Placement:</strong> {placement}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>Aspects:</strong> {aspectDetails.length > 0 ? aspectDetails.join('; ') : 'None'}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>Conjunctions:</strong> {conjunctions.length > 0 ? conjunctions.join(', ') : 'None'}
+                            </Typography>
+                          </Grid>
+                          {signExchanges.length > 0 && (
+                            <Grid item xs={12}>
+                              <Typography variant="body2" color="text.secondary">
+                                <strong>Sign Exchanges:</strong> {signExchanges.join(', ')}
+                              </Typography>
+                            </Grid>
+                          )}
+                        </Grid>
+                      </Box>
+
+                      {/* Main Subjects */}
+                      {planetData && planetData.mainSubjects && (
+                        <Box>
+                          <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1, color: planetColor }}>
+                            Main Subjects:
+                          </Typography>
+                          <Grid container spacing={1}>
+                            {planetData.mainSubjects.slice(0, 4).map((subject, idx) => (
+                              <Grid item xs={12} sm={6} key={idx}>
+                                <Typography variant="body2" sx={{ fontWeight: 600, color: planetColor }}>
+                                  • {subject.title}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" sx={{ pl: 1, display: 'block' }}>
+                                  {subject.items.slice(0, 2).join(', ')}
+                                </Typography>
+                              </Grid>
+                            ))}
+                          </Grid>
+                        </Box>
+                      )}
+                    </AccordionDetails>
+                  </Accordion>
+                );
+              })}
             </Paper>
           </Grid>
 

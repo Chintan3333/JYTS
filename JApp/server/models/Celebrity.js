@@ -22,6 +22,11 @@ const CelebritySchema = new mongoose.Schema({
         required: true,
         default: 'Business'
     },
+    timeZone: {
+        type: String,
+        required: true,
+        default: '+05:30'
+    },
     dataAccuracy: {
         type: String,
         enum: ['good', 'bad'],

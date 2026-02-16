@@ -13,6 +13,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { alpha } from '@mui/material/styles';
 import { planetInfo, houseInfo, zodiacSignInfo, planetInSignTraits, houseLordInHouseEffects, planetInHouseEffects, getZodiacSignColor, getZodiacSignAbbr } from '../data/astrologyData';
+import { nakshatraInfo, rulerToPlanetKey } from '../data/nakshatraData';
 
 // Helper function to get planet abbreviation
 const getPlanetAbbr = (planet) => {
@@ -427,6 +428,301 @@ function PlanetInfo() {
               </AccordionDetails>
             </Accordion>
           ))}
+        </Box>
+
+        <Divider sx={{ my: 6 }} />
+
+        {/* Nakshatra Information Section */}
+        <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 1, mt: 4 }}>
+          Nakshatra Information
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+          The 27 lunar constellations (nakshatras) in Vedic astrology, each spanning 13°20′ of the zodiac
+        </Typography>
+
+        <Box>
+          {nakshatraInfo.map((nakshatra) => {
+            const planetKey = rulerToPlanetKey[nakshatra.ruler] || 'sun';
+            const nakshatraColor = getPlanetColor(planetKey);
+            const textColor = getTextColor(nakshatraColor);
+
+            return (
+              <Accordion 
+                key={nakshatra.number} 
+                sx={{ 
+                  mb: 2,
+                  boxShadow: `0 2px 8px ${alpha(nakshatraColor, 0.15)}`,
+                  '&:hover': {
+                    boxShadow: `0 4px 12px ${alpha(nakshatraColor, 0.25)}`,
+                  },
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon sx={{ color: nakshatraColor }} />}
+                  sx={{
+                    backgroundColor: alpha(nakshatraColor, 0.08),
+                    '&:hover': {
+                      backgroundColor: alpha(nakshatraColor, 0.15),
+                    },
+                    transition: 'background-color 0.2s ease',
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                    <Box
+                      sx={{
+                        backgroundColor: nakshatraColor,
+                        color: textColor,
+                        minWidth: 50,
+                        height: 50,
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 'bold',
+                        fontSize: '1rem',
+                        boxShadow: `0 2px 6px ${alpha(nakshatraColor, 0.4)}`,
+                      }}
+                    >
+                      {nakshatra.number}
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="subtitle1" fontWeight={600} sx={{ color: nakshatraColor, mb: 0.5 }}>
+                        {nakshatra.name}
+                        {nakshatra.nameSanskrit ? ` (${nakshatra.nameSanskrit})` : ''}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {nakshatra.location} · Ruled by <strong>{nakshatra.ruler}</strong> · {nakshatra.deity} · {nakshatra.starLine}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </AccordionSummary>
+                <AccordionDetails sx={{ pt: 2, pb: 3 }}>
+                  <Grid container spacing={3}>
+                    {/* Basic Information */}
+                    <Grid item xs={12} md={6}>
+                      <Paper 
+                        elevation={0}
+                        sx={{ 
+                          p: 2, 
+                          border: `1px solid ${alpha(nakshatraColor, 0.2)}`,
+                          borderRadius: 2,
+                          backgroundColor: alpha(nakshatraColor, 0.03),
+                        }}
+                      >
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5, color: nakshatraColor }}>
+                          Basic Information
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          <Typography variant="body2">
+                            <strong>Symbol:</strong> {nakshatra.symbol}
+                          </Typography>
+                          <Typography variant="body2">
+                            <strong>Guna:</strong> {nakshatra.guna} · <strong>Gana:</strong> {nakshatra.gana}
+                          </Typography>
+                          <Typography variant="body2">
+                            <strong>Nature:</strong> {nakshatra.nature}
+                          </Typography>
+                        </Box>
+                      </Paper>
+                    </Grid>
+
+                    {/* Table Attributes */}
+                    <Grid item xs={12} md={6}>
+                      <Paper 
+                        elevation={0}
+                        sx={{ 
+                          p: 2, 
+                          border: `1px solid ${alpha(nakshatraColor, 0.2)}`,
+                          borderRadius: 2,
+                          backgroundColor: alpha(nakshatraColor, 0.03),
+                        }}
+                      >
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5, color: nakshatraColor }}>
+                          Attributes
+                        </Typography>
+                        <Grid container spacing={1}>
+                          <Grid item xs={6}>
+                            <Typography variant="body2">
+                              <strong>Purushartha:</strong> {nakshatra.purushartha}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="body2">
+                              <strong>Element:</strong> {nakshatra.element}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="body2">
+                              <strong>Trimurthi:</strong> {nakshatra.trimurthi}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="body2">
+                              <strong>Varna:</strong> {nakshatra.varna}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="body2">
+                              <strong>Animal:</strong> {nakshatra.animal}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="body2">
+                              <strong>Bird:</strong> {nakshatra.bird}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={12}>
+                            <Typography variant="body2">
+                              <strong>Tree:</strong> {nakshatra.tree}
+                            </Typography>
+                          </Grid>
+                        </Grid>
+                      </Paper>
+                    </Grid>
+
+                    {/* Main Significations */}
+                    <Grid item xs={12}>
+                      <Paper 
+                        elevation={0}
+                        sx={{ 
+                          p: 2, 
+                          border: `1px solid ${alpha(nakshatraColor, 0.2)}`,
+                          borderRadius: 2,
+                          backgroundColor: alpha(nakshatraColor, 0.03),
+                        }}
+                      >
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5, color: nakshatraColor }}>
+                          Main Significations
+                        </Typography>
+                        <Grid container spacing={1}>
+                          {nakshatra.mainSignifications.map((item, idx) => (
+                            <Grid item xs={12} sm={6} md={4} key={idx}>
+                              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                <Box
+                                  sx={{
+                                    width: 6,
+                                    height: 6,
+                                    borderRadius: '50%',
+                                    backgroundColor: nakshatraColor,
+                                    mt: 0.75,
+                                    flexShrink: 0,
+                                  }}
+                                />
+                                <Typography variant="body2">{item}</Typography>
+                              </Box>
+                            </Grid>
+                          ))}
+                        </Grid>
+                      </Paper>
+                    </Grid>
+
+                    {/* Padas Information */}
+                    {nakshatra.padas && nakshatra.padas.length > 0 && (
+                      <Grid item xs={12}>
+                        <Paper 
+                          elevation={0}
+                          sx={{ 
+                            p: 2, 
+                            border: `1px solid ${alpha(nakshatraColor, 0.2)}`,
+                            borderRadius: 2,
+                            backgroundColor: alpha(nakshatraColor, 0.03),
+                          }}
+                        >
+                          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: nakshatraColor }}>
+                            Pada-wise Traits (Each pada spans 3°20′)
+                          </Typography>
+                          <Grid container spacing={2}>
+                            {nakshatra.padas.map((pada, idx) => (
+                              <Grid item xs={12} sm={6} md={3} key={idx}>
+                                <Paper
+                                  elevation={0}
+                                  sx={{
+                                    p: 1.5,
+                                    border: `1px solid ${alpha(nakshatraColor, 0.3)}`,
+                                    borderRadius: 1.5,
+                                    backgroundColor: alpha(nakshatraColor, 0.05),
+                                    height: '100%',
+                                  }}
+                                >
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, color: nakshatraColor }}>
+                                    Pada {idx + 1}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                    {pada.range}
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ display: 'block', mb: 0.5, fontWeight: 500 }}>
+                                    {pada.navamsa} Navamsa
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ display: 'block', mb: 0.5, fontStyle: 'italic' }}>
+                                    {pada.keywords}
+                                  </Typography>
+                                  <Box component="ul" sx={{ m: 0, pl: 1.5, mt: 0.5 }}>
+                                    {pada.traits.slice(0, 3).map((trait, traitIdx) => (
+                                      <li key={traitIdx}>
+                                        <Typography variant="caption" color="text.secondary">
+                                          {trait}
+                                        </Typography>
+                                      </li>
+                                    ))}
+                                  </Box>
+                                </Paper>
+                              </Grid>
+                            ))}
+                          </Grid>
+                        </Paper>
+                      </Grid>
+                    )}
+
+                    {/* Summary and Memory Line */}
+                    <Grid item xs={12}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                        {nakshatra.summaryPoints && nakshatra.summaryPoints.length > 0 && (
+                          <Paper 
+                            elevation={0}
+                            sx={{ 
+                              p: 2, 
+                              border: `1px solid ${alpha(nakshatraColor, 0.2)}`,
+                              borderRadius: 2,
+                              backgroundColor: alpha(nakshatraColor, 0.03),
+                            }}
+                          >
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1, color: nakshatraColor }}>
+                              Summary
+                            </Typography>
+                            <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
+                              {nakshatra.summaryPoints.map((point, idx) => (
+                                <li key={idx}>
+                                  <Typography variant="body2">{point}</Typography>
+                                </li>
+                              ))}
+                            </Box>
+                          </Paper>
+                        )}
+                        <Paper 
+                          elevation={0}
+                          sx={{ 
+                            p: 2, 
+                            border: `2px solid ${alpha(nakshatraColor, 0.3)}`,
+                            borderRadius: 2,
+                            backgroundColor: alpha(nakshatraColor, 0.05),
+                            borderLeft: `4px solid ${nakshatraColor}`,
+                          }}
+                        >
+                          <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
+                            <strong style={{ color: nakshatraColor }}>Memory Line:</strong> “{nakshatra.memoryLine}”
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
+                            <strong style={{ color: nakshatraColor }}>Power Line:</strong> “{nakshatra.powerLinr}”
+                          </Typography>
+                          
+                        </Paper>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </AccordionDetails>
+              </Accordion>
+            );
+          })}
         </Box>
 
         <Divider sx={{ my: 6 }} />
