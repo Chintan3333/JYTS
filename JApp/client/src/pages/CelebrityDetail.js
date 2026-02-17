@@ -22,7 +22,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import InfoIcon from '@mui/icons-material/Info';
 import { alpha } from '@mui/material/styles';
-import { EclipticGeoMoon, EclipticLongitude, MakeTime } from 'astronomy-engine';
+import { EclipticGeoMoon, EclipticLongitude, Ecliptic, GeoVector, Body, SearchMoonNode, GeoMoon } from 'astronomy-engine';
 
 // Helper function to get zodiac sign number
 const getZodiacNumber = (sign) => {
@@ -860,8 +860,14 @@ const checkPlanetNakshatraDetails = (date, planet) => {
     // Moon geocentric ecliptic longitude
     ecl = EclipticGeoMoon(date);
     ecl = ecl.lon;
+  } else if (planet == 'Rahu' || planet == 'Ketu') {
+    const node = SearchMoonNode(date);
+    ecl = Ecliptic(GeoMoon(node.time));
+    ecl = planet == 'Rahu' ? ecl.elon : ecl.elon + 180 ;
   } else {
-    ecl = EclipticLongitude(planet, date);
+    const vec = GeoVector(Body[planet], date, true);
+    ecl = Ecliptic(vec);
+    ecl = ecl.elon;
   }
 
   const ayanamsa = lahiriAyanamsa(date);
@@ -1018,7 +1024,7 @@ function CelebrityDetail() {
 
   //Calculate Moon Nakshtra Details
 
-  const nakshatraPlanets = ['Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn'];
+  const nakshatraPlanets = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu'];
   const planetNakshatraDetails = {};
   nakshatraPlanets.forEach((planet) => {
     planetNakshatraDetails[planet] = checkPlanetNakshatraDetails(new Date(`${celebrity.birthDate.split("T")[0]}T${celebrity.birthTime}:00${celebrity.timeZone}`), planet);
@@ -1119,560 +1125,574 @@ function CelebrityDetail() {
             <Divider sx={{ my: 3 }} />
           </Grid>
 
-          {/* Vedic Astrology Kundli */}
+          {/* Vedic Astrology Kundli - Expandable */}
           <Grid item xs={12}>
-            <Typography variant="h6" gutterBottom>
-              Vedic Astrology Kundli
-            </Typography>
-          </Grid>
-          <Grid item xs={12}>
-            <Box
+            <Accordion
+              defaultExpanded={true}
               sx={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(5, 1fr)',
-                gap: 2,
-                mt: 2,
-                '& > div': {
-                  position: 'relative',
-                  minHeight: '120px',
-                  p: 2,
-                  borderRadius: 2,
-                  border: (theme) => `1px solid ${theme.palette.divider}`,
-                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                },
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                borderRadius: '8px !important',
+                '&:before': { display: 'none' },
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
               }}
             >
-              {/* Row 1 */}
-              <Box></Box>
-              {/* House 2 */}
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  House 2
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Vedic Astrology Kundli
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {housePositions[1] || ''}
-                </Typography>
-                <Box sx={{
-                  position: 'absolute',
-                  bottom: 4,
-                  display: 'flex',
-                  gap: 1,
-                  flexWrap: 'wrap',
-                  justifyContent: 'center',
-                  width: '100%'
-                }}>
-                  {Object.entries(celebrity.planets).map(([planet, data]) => {
-                    if (data.house === 2) {
-                      const bgColor = getPlanetColor(planet);
-                      const textColor = getTextColor(bgColor);
-                      return (
-                        <Box
-                          key={planet}
-                          sx={{
-                            backgroundColor: bgColor,
-                            color: textColor,
-                            padding: '2px 4px',
-                            borderRadius: '4px',
-                            fontSize: '0.8rem',
-                            fontWeight: 'bold',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                          }}
-                        >
-                          {getPlanetAbbr(planet)}
-                        </Box>
-                      );
-                    }
-                    return null;
-                  })}
-                </Box>
-              </Box>
-              <Box></Box>
-              {/* House 12 */}
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  House 12
-                </Typography>
-                <Typography variant="body2">
-                  {housePositions[11] || ''}
-                </Typography>
-                <Box sx={{
-                  position: 'absolute',
-                  bottom: 4,
-                  display: 'flex',
-                  gap: 1,
-                  flexWrap: 'wrap',
-                  justifyContent: 'center',
-                  width: '100%'
-                }}>
-                  {Object.entries(celebrity.planets).map(([planet, data]) => {
-                    if (data.house === 12) {
-                      const bgColor = getPlanetColor(planet);
-                      const textColor = getTextColor(bgColor);
-                      return (
-                        <Box
-                          key={planet}
-                          sx={{
-                            backgroundColor: bgColor,
-                            color: textColor,
-                            padding: '2px 4px',
-                            borderRadius: '4px',
-                            fontSize: '0.8rem',
-                            fontWeight: 'bold',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                          }}
-                        >
-                          {getPlanetAbbr(planet)}
-                        </Box>
-                      );
-                    }
-                    return null;
-                  })}
-                </Box>
-              </Box>
-              <Box></Box>
+                <Chip label="House chart" size="small" sx={{ ml: 1 }} variant="outlined" />
+              </AccordionSummary>
+              <AccordionDetails sx={{ pt: 0 }}>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(5, 1fr)',
+                    gap: 2,
+                    mt: 2,
+                    '& > div': {
+                      position: 'relative',
+                      minHeight: '120px',
+                      p: 2,
+                      borderRadius: 2,
+                      border: (theme) => `1px solid ${theme.palette.divider}`,
+                      backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    },
+                  }}
+                >
+                  {/* Row 1 */}
+                  <Box></Box>
+                  {/* House 2 */}
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      House 2
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {housePositions[1] || ''}
+                    </Typography>
+                    <Box sx={{
+                      position: 'absolute',
+                      bottom: 4,
+                      display: 'flex',
+                      gap: 1,
+                      flexWrap: 'wrap',
+                      justifyContent: 'center',
+                      width: '100%'
+                    }}>
+                      {Object.entries(celebrity.planets).map(([planet, data]) => {
+                        if (data.house === 2) {
+                          const bgColor = getPlanetColor(planet);
+                          const textColor = getTextColor(bgColor);
+                          return (
+                            <Box
+                              key={planet}
+                              sx={{
+                                backgroundColor: bgColor,
+                                color: textColor,
+                                padding: '2px 4px',
+                                borderRadius: '4px',
+                                fontSize: '0.8rem',
+                                fontWeight: 'bold',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                              }}
+                            >
+                              {getPlanetAbbr(planet)}
+                            </Box>
+                          );
+                        }
+                        return null;
+                      })}
+                    </Box>
+                  </Box>
+                  <Box></Box>
+                  {/* House 12 */}
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      House 12
+                    </Typography>
+                    <Typography variant="body2">
+                      {housePositions[11] || ''}
+                    </Typography>
+                    <Box sx={{
+                      position: 'absolute',
+                      bottom: 4,
+                      display: 'flex',
+                      gap: 1,
+                      flexWrap: 'wrap',
+                      justifyContent: 'center',
+                      width: '100%'
+                    }}>
+                      {Object.entries(celebrity.planets).map(([planet, data]) => {
+                        if (data.house === 12) {
+                          const bgColor = getPlanetColor(planet);
+                          const textColor = getTextColor(bgColor);
+                          return (
+                            <Box
+                              key={planet}
+                              sx={{
+                                backgroundColor: bgColor,
+                                color: textColor,
+                                padding: '2px 4px',
+                                borderRadius: '4px',
+                                fontSize: '0.8rem',
+                                fontWeight: 'bold',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                              }}
+                            >
+                              {getPlanetAbbr(planet)}
+                            </Box>
+                          );
+                        }
+                        return null;
+                      })}
+                    </Box>
+                  </Box>
+                  <Box></Box>
 
-              {/* Row 2 */}
-              {/* House 3 */}
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  House 3
-                </Typography>
-                <Typography variant="body2">
-                  {housePositions[2] || ''}
-                </Typography>
-                <Box sx={{
-                  position: 'absolute',
-                  bottom: 4,
-                  display: 'flex',
-                  gap: 1,
-                  flexWrap: 'wrap',
-                  justifyContent: 'center',
-                  width: '100%'
-                }}>
-                  {Object.entries(celebrity.planets).map(([planet, data]) => {
-                    if (data.house === 3) {
-                      const bgColor = getPlanetColor(planet);
-                      const textColor = getTextColor(bgColor);
-                      return (
-                        <Box
-                          key={planet}
-                          sx={{
-                            backgroundColor: bgColor,
-                            color: textColor,
-                            padding: '2px 4px',
-                            borderRadius: '4px',
-                            fontSize: '0.8rem',
-                            fontWeight: 'bold',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                          }}
-                        >
-                          {getPlanetAbbr(planet)}
-                        </Box>
-                      );
-                    }
-                    return null;
-                  })}
-                </Box>
-              </Box>
-              <Box></Box>
-              {/* House 1 */}
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  House 1
-                </Typography>
-                <Typography variant="body2">
-                  {housePositions[0] || ''}
-                </Typography>
-                <Box sx={{
-                  position: 'absolute',
-                  bottom: 4,
-                  display: 'flex',
-                  gap: 1,
-                  flexWrap: 'wrap',
-                  justifyContent: 'center',
-                  width: '100%'
-                }}>
-                  {Object.entries(celebrity.planets).map(([planet, data]) => {
-                    if (data.house === 1) {
-                      const bgColor = getPlanetColor(planet);
-                      const textColor = getTextColor(bgColor);
-                      return (
-                        <Box
-                          key={planet}
-                          sx={{
-                            backgroundColor: bgColor,
-                            color: textColor,
-                            padding: '2px 4px',
-                            borderRadius: '4px',
-                            fontSize: '0.8rem',
-                            fontWeight: 'bold',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                          }}
-                        >
-                          {getPlanetAbbr(planet)}
-                        </Box>
-                      );
-                    }
-                    return null;
-                  })}
-                </Box>
-              </Box>
-              <Box></Box>
-              {/* House 11 */}
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  House 11
-                </Typography>
-                <Typography variant="body2">
-                  {housePositions[10] || ''}
-                </Typography>
-                <Box sx={{
-                  position: 'absolute',
-                  bottom: 4,
-                  display: 'flex',
-                  gap: 1,
-                  flexWrap: 'wrap',
-                  justifyContent: 'center',
-                  width: '100%'
-                }}>
-                  {Object.entries(celebrity.planets).map(([planet, data]) => {
-                    if (data.house === 11) {
-                      const bgColor = getPlanetColor(planet);
-                      const textColor = getTextColor(bgColor);
-                      return (
-                        <Box
-                          key={planet}
-                          sx={{
-                            backgroundColor: bgColor,
-                            color: textColor,
-                            padding: '2px 4px',
-                            borderRadius: '4px',
-                            fontSize: '0.8rem',
-                            fontWeight: 'bold',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                          }}
-                        >
-                          {getPlanetAbbr(planet)}
-                        </Box>
-                      );
-                    }
-                    return null;
-                  })}
-                </Box>
-              </Box>
+                  {/* Row 2 */}
+                  {/* House 3 */}
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      House 3
+                    </Typography>
+                    <Typography variant="body2">
+                      {housePositions[2] || ''}
+                    </Typography>
+                    <Box sx={{
+                      position: 'absolute',
+                      bottom: 4,
+                      display: 'flex',
+                      gap: 1,
+                      flexWrap: 'wrap',
+                      justifyContent: 'center',
+                      width: '100%'
+                    }}>
+                      {Object.entries(celebrity.planets).map(([planet, data]) => {
+                        if (data.house === 3) {
+                          const bgColor = getPlanetColor(planet);
+                          const textColor = getTextColor(bgColor);
+                          return (
+                            <Box
+                              key={planet}
+                              sx={{
+                                backgroundColor: bgColor,
+                                color: textColor,
+                                padding: '2px 4px',
+                                borderRadius: '4px',
+                                fontSize: '0.8rem',
+                                fontWeight: 'bold',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                              }}
+                            >
+                              {getPlanetAbbr(planet)}
+                            </Box>
+                          );
+                        }
+                        return null;
+                      })}
+                    </Box>
+                  </Box>
+                  <Box></Box>
+                  {/* House 1 */}
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      House 1
+                    </Typography>
+                    <Typography variant="body2">
+                      {housePositions[0] || ''}
+                    </Typography>
+                    <Box sx={{
+                      position: 'absolute',
+                      bottom: 4,
+                      display: 'flex',
+                      gap: 1,
+                      flexWrap: 'wrap',
+                      justifyContent: 'center',
+                      width: '100%'
+                    }}>
+                      {Object.entries(celebrity.planets).map(([planet, data]) => {
+                        if (data.house === 1) {
+                          const bgColor = getPlanetColor(planet);
+                          const textColor = getTextColor(bgColor);
+                          return (
+                            <Box
+                              key={planet}
+                              sx={{
+                                backgroundColor: bgColor,
+                                color: textColor,
+                                padding: '2px 4px',
+                                borderRadius: '4px',
+                                fontSize: '0.8rem',
+                                fontWeight: 'bold',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                              }}
+                            >
+                              {getPlanetAbbr(planet)}
+                            </Box>
+                          );
+                        }
+                        return null;
+                      })}
+                    </Box>
+                  </Box>
+                  <Box></Box>
+                  {/* House 11 */}
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      House 11
+                    </Typography>
+                    <Typography variant="body2">
+                      {housePositions[10] || ''}
+                    </Typography>
+                    <Box sx={{
+                      position: 'absolute',
+                      bottom: 4,
+                      display: 'flex',
+                      gap: 1,
+                      flexWrap: 'wrap',
+                      justifyContent: 'center',
+                      width: '100%'
+                    }}>
+                      {Object.entries(celebrity.planets).map(([planet, data]) => {
+                        if (data.house === 11) {
+                          const bgColor = getPlanetColor(planet);
+                          const textColor = getTextColor(bgColor);
+                          return (
+                            <Box
+                              key={planet}
+                              sx={{
+                                backgroundColor: bgColor,
+                                color: textColor,
+                                padding: '2px 4px',
+                                borderRadius: '4px',
+                                fontSize: '0.8rem',
+                                fontWeight: 'bold',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                              }}
+                            >
+                              {getPlanetAbbr(planet)}
+                            </Box>
+                          );
+                        }
+                        return null;
+                      })}
+                    </Box>
+                  </Box>
 
-              {/* Row 3 */}
-              <Box></Box>
-              {/* House 4 */}
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  House 4
-                </Typography>
-                <Typography variant="body2">
-                  {housePositions[3] || ''}
-                </Typography>
-                <Box sx={{
-                  position: 'absolute',
-                  bottom: 4,
-                  display: 'flex',
-                  gap: 1,
-                  flexWrap: 'wrap',
-                  justifyContent: 'center',
-                  width: '100%'
-                }}>
-                  {Object.entries(celebrity.planets).map(([planet, data]) => {
-                    if (data.house === 4) {
-                      const bgColor = getPlanetColor(planet);
-                      const textColor = getTextColor(bgColor);
-                      return (
-                        <Box
-                          key={planet}
-                          sx={{
-                            backgroundColor: bgColor,
-                            color: textColor,
-                            padding: '2px 4px',
-                            borderRadius: '4px',
-                            fontSize: '0.8rem',
-                            fontWeight: 'bold',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                          }}
-                        >
-                          {getPlanetAbbr(planet)}
-                        </Box>
-                      );
-                    }
-                    return null;
-                  })}
-                </Box>
-              </Box>
-              <Box></Box>
-              {/* House 10 */}
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  House 10
-                </Typography>
-                <Typography variant="body2">
-                  {housePositions[9] || ''}
-                </Typography>
-                <Box sx={{
-                  position: 'absolute',
-                  bottom: 4,
-                  display: 'flex',
-                  gap: 1,
-                  flexWrap: 'wrap',
-                  justifyContent: 'center',
-                  width: '100%'
-                }}>
-                  {Object.entries(celebrity.planets).map(([planet, data]) => {
-                    if (data.house === 10) {
-                      const bgColor = getPlanetColor(planet);
-                      const textColor = getTextColor(bgColor);
-                      return (
-                        <Box
-                          key={planet}
-                          sx={{
-                            backgroundColor: bgColor,
-                            color: textColor,
-                            padding: '2px 4px',
-                            borderRadius: '4px',
-                            fontSize: '0.8rem',
-                            fontWeight: 'bold',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                          }}
-                        >
-                          {getPlanetAbbr(planet)}
-                        </Box>
-                      );
-                    }
-                    return null;
-                  })}
-                </Box>
-              </Box>
-              <Box></Box>
+                  {/* Row 3 */}
+                  <Box></Box>
+                  {/* House 4 */}
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      House 4
+                    </Typography>
+                    <Typography variant="body2">
+                      {housePositions[3] || ''}
+                    </Typography>
+                    <Box sx={{
+                      position: 'absolute',
+                      bottom: 4,
+                      display: 'flex',
+                      gap: 1,
+                      flexWrap: 'wrap',
+                      justifyContent: 'center',
+                      width: '100%'
+                    }}>
+                      {Object.entries(celebrity.planets).map(([planet, data]) => {
+                        if (data.house === 4) {
+                          const bgColor = getPlanetColor(planet);
+                          const textColor = getTextColor(bgColor);
+                          return (
+                            <Box
+                              key={planet}
+                              sx={{
+                                backgroundColor: bgColor,
+                                color: textColor,
+                                padding: '2px 4px',
+                                borderRadius: '4px',
+                                fontSize: '0.8rem',
+                                fontWeight: 'bold',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                              }}
+                            >
+                              {getPlanetAbbr(planet)}
+                            </Box>
+                          );
+                        }
+                        return null;
+                      })}
+                    </Box>
+                  </Box>
+                  <Box></Box>
+                  {/* House 10 */}
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      House 10
+                    </Typography>
+                    <Typography variant="body2">
+                      {housePositions[9] || ''}
+                    </Typography>
+                    <Box sx={{
+                      position: 'absolute',
+                      bottom: 4,
+                      display: 'flex',
+                      gap: 1,
+                      flexWrap: 'wrap',
+                      justifyContent: 'center',
+                      width: '100%'
+                    }}>
+                      {Object.entries(celebrity.planets).map(([planet, data]) => {
+                        if (data.house === 10) {
+                          const bgColor = getPlanetColor(planet);
+                          const textColor = getTextColor(bgColor);
+                          return (
+                            <Box
+                              key={planet}
+                              sx={{
+                                backgroundColor: bgColor,
+                                color: textColor,
+                                padding: '2px 4px',
+                                borderRadius: '4px',
+                                fontSize: '0.8rem',
+                                fontWeight: 'bold',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                              }}
+                            >
+                              {getPlanetAbbr(planet)}
+                            </Box>
+                          );
+                        }
+                        return null;
+                      })}
+                    </Box>
+                  </Box>
+                  <Box></Box>
 
-              {/* Row 4 */}
-              {/* House 5 */}
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  House 5
-                </Typography>
-                <Typography variant="body2">
-                  {housePositions[4] || ''}
-                </Typography>
-                <Box sx={{
-                  position: 'absolute',
-                  bottom: 4,
-                  display: 'flex',
-                  gap: 1,
-                  flexWrap: 'wrap',
-                  justifyContent: 'center',
-                  width: '100%'
-                }}>
-                  {Object.entries(celebrity.planets).map(([planet, data]) => {
-                    if (data.house === 5) {
-                      const bgColor = getPlanetColor(planet);
-                      const textColor = getTextColor(bgColor);
-                      return (
-                        <Box
-                          key={planet}
-                          sx={{
-                            backgroundColor: bgColor,
-                            color: textColor,
-                            padding: '2px 4px',
-                            borderRadius: '4px',
-                            fontSize: '0.8rem',
-                            fontWeight: 'bold',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                          }}
-                        >
-                          {getPlanetAbbr(planet)}
-                        </Box>
-                      );
-                    }
-                    return null;
-                  })}
-                </Box>
-              </Box>
-              <Box></Box>
-              {/* House 7 */}
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  House 7
-                </Typography>
-                <Typography variant="body2">
-                  {housePositions[6] || ''}
-                </Typography>
-                <Box sx={{
-                  position: 'absolute',
-                  bottom: 4,
-                  display: 'flex',
-                  gap: 1,
-                  flexWrap: 'wrap',
-                  justifyContent: 'center',
-                  width: '100%'
-                }}>
-                  {Object.entries(celebrity.planets).map(([planet, data]) => {
-                    if (data.house === 7) {
-                      const bgColor = getPlanetColor(planet);
-                      const textColor = getTextColor(bgColor);
-                      return (
-                        <Box
-                          key={planet}
-                          sx={{
-                            backgroundColor: bgColor,
-                            color: textColor,
-                            padding: '2px 4px',
-                            borderRadius: '4px',
-                            fontSize: '0.8rem',
-                            fontWeight: 'bold',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                          }}
-                        >
-                          {getPlanetAbbr(planet)}
-                        </Box>
-                      );
-                    }
-                    return null;
-                  })}
-                </Box>
-              </Box>
-              <Box></Box>
-              {/* House 9 */}
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  House 9
-                </Typography>
-                <Typography variant="body2">
-                  {housePositions[8] || ''}
-                </Typography>
-                <Box sx={{
-                  position: 'absolute',
-                  bottom: 4,
-                  display: 'flex',
-                  gap: 1,
-                  flexWrap: 'wrap',
-                  justifyContent: 'center',
-                  width: '100%'
-                }}>
-                  {Object.entries(celebrity.planets).map(([planet, data]) => {
-                    if (data.house === 9) {
-                      const bgColor = getPlanetColor(planet);
-                      const textColor = getTextColor(bgColor);
-                      return (
-                        <Box
-                          key={planet}
-                          sx={{
-                            backgroundColor: bgColor,
-                            color: textColor,
-                            padding: '2px 4px',
-                            borderRadius: '4px',
-                            fontSize: '0.8rem',
-                            fontWeight: 'bold',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                          }}
-                        >
-                          {getPlanetAbbr(planet)}
-                        </Box>
-                      );
-                    }
-                    return null;
-                  })}
-                </Box>
-              </Box>
+                  {/* Row 4 */}
+                  {/* House 5 */}
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      House 5
+                    </Typography>
+                    <Typography variant="body2">
+                      {housePositions[4] || ''}
+                    </Typography>
+                    <Box sx={{
+                      position: 'absolute',
+                      bottom: 4,
+                      display: 'flex',
+                      gap: 1,
+                      flexWrap: 'wrap',
+                      justifyContent: 'center',
+                      width: '100%'
+                    }}>
+                      {Object.entries(celebrity.planets).map(([planet, data]) => {
+                        if (data.house === 5) {
+                          const bgColor = getPlanetColor(planet);
+                          const textColor = getTextColor(bgColor);
+                          return (
+                            <Box
+                              key={planet}
+                              sx={{
+                                backgroundColor: bgColor,
+                                color: textColor,
+                                padding: '2px 4px',
+                                borderRadius: '4px',
+                                fontSize: '0.8rem',
+                                fontWeight: 'bold',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                              }}
+                            >
+                              {getPlanetAbbr(planet)}
+                            </Box>
+                          );
+                        }
+                        return null;
+                      })}
+                    </Box>
+                  </Box>
+                  <Box></Box>
+                  {/* House 7 */}
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      House 7
+                    </Typography>
+                    <Typography variant="body2">
+                      {housePositions[6] || ''}
+                    </Typography>
+                    <Box sx={{
+                      position: 'absolute',
+                      bottom: 4,
+                      display: 'flex',
+                      gap: 1,
+                      flexWrap: 'wrap',
+                      justifyContent: 'center',
+                      width: '100%'
+                    }}>
+                      {Object.entries(celebrity.planets).map(([planet, data]) => {
+                        if (data.house === 7) {
+                          const bgColor = getPlanetColor(planet);
+                          const textColor = getTextColor(bgColor);
+                          return (
+                            <Box
+                              key={planet}
+                              sx={{
+                                backgroundColor: bgColor,
+                                color: textColor,
+                                padding: '2px 4px',
+                                borderRadius: '4px',
+                                fontSize: '0.8rem',
+                                fontWeight: 'bold',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                              }}
+                            >
+                              {getPlanetAbbr(planet)}
+                            </Box>
+                          );
+                        }
+                        return null;
+                      })}
+                    </Box>
+                  </Box>
+                  <Box></Box>
+                  {/* House 9 */}
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      House 9
+                    </Typography>
+                    <Typography variant="body2">
+                      {housePositions[8] || ''}
+                    </Typography>
+                    <Box sx={{
+                      position: 'absolute',
+                      bottom: 4,
+                      display: 'flex',
+                      gap: 1,
+                      flexWrap: 'wrap',
+                      justifyContent: 'center',
+                      width: '100%'
+                    }}>
+                      {Object.entries(celebrity.planets).map(([planet, data]) => {
+                        if (data.house === 9) {
+                          const bgColor = getPlanetColor(planet);
+                          const textColor = getTextColor(bgColor);
+                          return (
+                            <Box
+                              key={planet}
+                              sx={{
+                                backgroundColor: bgColor,
+                                color: textColor,
+                                padding: '2px 4px',
+                                borderRadius: '4px',
+                                fontSize: '0.8rem',
+                                fontWeight: 'bold',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                              }}
+                            >
+                              {getPlanetAbbr(planet)}
+                            </Box>
+                          );
+                        }
+                        return null;
+                      })}
+                    </Box>
+                  </Box>
 
-              {/* Row 5 */}
-              <Box></Box>
-              {/* House 6 */}
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  House 6
-                </Typography>
-                <Typography variant="body2">
-                  {housePositions[5] || ''}
-                </Typography>
-                <Box sx={{
-                  position: 'absolute',
-                  bottom: 4,
-                  display: 'flex',
-                  gap: 1,
-                  flexWrap: 'wrap',
-                  justifyContent: 'center',
-                  width: '100%'
-                }}>
-                  {Object.entries(celebrity.planets).map(([planet, data]) => {
-                    if (data.house === 6) {
-                      const bgColor = getPlanetColor(planet);
-                      const textColor = getTextColor(bgColor);
-                      return (
-                        <Box
-                          key={planet}
-                          sx={{
-                            backgroundColor: bgColor,
-                            color: textColor,
-                            padding: '2px 4px',
-                            borderRadius: '4px',
-                            fontSize: '0.8rem',
-                            fontWeight: 'bold',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                          }}
-                        >
-                          {getPlanetAbbr(planet)}
-                        </Box>
-                      );
-                    }
-                    return null;
-                  })}
+                  {/* Row 5 */}
+                  <Box></Box>
+                  {/* House 6 */}
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      House 6
+                    </Typography>
+                    <Typography variant="body2">
+                      {housePositions[5] || ''}
+                    </Typography>
+                    <Box sx={{
+                      position: 'absolute',
+                      bottom: 4,
+                      display: 'flex',
+                      gap: 1,
+                      flexWrap: 'wrap',
+                      justifyContent: 'center',
+                      width: '100%'
+                    }}>
+                      {Object.entries(celebrity.planets).map(([planet, data]) => {
+                        if (data.house === 6) {
+                          const bgColor = getPlanetColor(planet);
+                          const textColor = getTextColor(bgColor);
+                          return (
+                            <Box
+                              key={planet}
+                              sx={{
+                                backgroundColor: bgColor,
+                                color: textColor,
+                                padding: '2px 4px',
+                                borderRadius: '4px',
+                                fontSize: '0.8rem',
+                                fontWeight: 'bold',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                              }}
+                            >
+                              {getPlanetAbbr(planet)}
+                            </Box>
+                          );
+                        }
+                        return null;
+                      })}
+                    </Box>
+                  </Box>
+                  <Box></Box>
+                  {/* House 8 */}
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      House 8
+                    </Typography>
+                    <Typography variant="body2">
+                      {housePositions[7] || ''}
+                    </Typography>
+                    <Box sx={{
+                      position: 'absolute',
+                      bottom: 4,
+                      display: 'flex',
+                      gap: 1,
+                      flexWrap: 'wrap',
+                      justifyContent: 'center',
+                      width: '100%'
+                    }}>
+                      {Object.entries(celebrity.planets).map(([planet, data]) => {
+                        if (data.house === 8) {
+                          const bgColor = getPlanetColor(planet);
+                          const textColor = getTextColor(bgColor);
+                          return (
+                            <Box
+                              key={planet}
+                              sx={{
+                                backgroundColor: bgColor,
+                                color: textColor,
+                                padding: '2px 4px',
+                                borderRadius: '4px',
+                                fontSize: '0.8rem',
+                                fontWeight: 'bold',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                              }}
+                            >
+                              {getPlanetAbbr(planet)}
+                            </Box>
+                          );
+                        }
+                        return null;
+                      })}
+                    </Box>
+                  </Box>
+                  <Box></Box>
                 </Box>
-              </Box>
-              <Box></Box>
-              {/* House 8 */}
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  House 8
-                </Typography>
-                <Typography variant="body2">
-                  {housePositions[7] || ''}
-                </Typography>
-                <Box sx={{
-                  position: 'absolute',
-                  bottom: 4,
-                  display: 'flex',
-                  gap: 1,
-                  flexWrap: 'wrap',
-                  justifyContent: 'center',
-                  width: '100%'
-                }}>
-                  {Object.entries(celebrity.planets).map(([planet, data]) => {
-                    if (data.house === 8) {
-                      const bgColor = getPlanetColor(planet);
-                      const textColor = getTextColor(bgColor);
-                      return (
-                        <Box
-                          key={planet}
-                          sx={{
-                            backgroundColor: bgColor,
-                            color: textColor,
-                            padding: '2px 4px',
-                            borderRadius: '4px',
-                            fontSize: '0.8rem',
-                            fontWeight: 'bold',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                          }}
-                        >
-                          {getPlanetAbbr(planet)}
-                        </Box>
-                      );
-                    }
-                    return null;
-                  })}
-                </Box>
-              </Box>
-              <Box></Box>
-            </Box>
+
+              </AccordionDetails>
+            </Accordion>
           </Grid>
 
           <Grid item xs={12}>
@@ -1680,386 +1700,563 @@ function CelebrityDetail() {
           </Grid>
 
 
+          {/* Nakshatra Section - Expandable */}
           <Grid item xs={12}>
-            <Typography variant="h6" gutterBottom>
-              Nakshatra
-            </Typography>
-          </Grid>
-
-          {nakshatraPlanets.map((planet) => {
-            return (
-              <Grid item xs={4}>
-                <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
-                  <Typography variant="body1">
-                    Planet = {planet}
-                  </Typography>
-                  <Typography variant="body1">
-                    Longitude = {planetNakshatraDetails[planet].planetLongitude}
-                  </Typography>
-                  <Typography variant="body1">
-                    Sign = {planetNakshatraDetails[planet].zodiacSign}
-                  </Typography>
-                  <Typography variant="body1">
-                    Nakshatra = {planetNakshatraDetails[planet].nakshatra}
-                  </Typography>
-                  <Typography variant="body1">
-                    Degree Inside Sign = {planetNakshatraDetails[planet].degreeInsideZodiac}
-                  </Typography>
-                  <Typography variant="body1">
-                    Degree Inside Nakshatra = {planetNakshatraDetails[planet].degreeInsideNakshatra}
-                  </Typography>
-                  <Typography variant="body1">
-                    Pada = {planetNakshatraDetails[planet].pada}
-                  </Typography>
-                </Paper>
-              </Grid>)
-          })}
-
-          <Grid item xs={12}>
-            <Typography variant="h6" gutterBottom>
-              Maha Dasha
-            </Typography>
-          </Grid>
-
-          {mahaDashaPeriods.map((mahaDasha) => {
-            return (
-              <Grid item xs={12}>
-                <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
-                  <Typography variant="body1">
-                    Planet : {mahaDasha.planet}
-                  </Typography>
-                  <Typography variant="body1">
-                    End Date : {mahaDasha.end.toLocaleString()}
-                  </Typography>
-                </Paper>
-              </Grid>
-            )
-          })}
-
-
-
-
-          {/* Yogas and Doshas Section */}
-          <Grid item xs={12}>
-            <Typography variant="h6" gutterBottom>
-              Yogas and Doshas
-            </Typography>
-          </Grid>
-
-          {/* Pancha Mahapurusha Rajyoga */}
-          <Grid item xs={12}>
-            <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
-              <Typography variant="subtitle1" gutterBottom>
-                Pancha Mahapurusha Rajyoga
-              </Typography>
-
-              {panchaMahapurushaYogas.length > 0 ? (
-                <Grid container spacing={2}>
-                  {panchaMahapurushaYogas.map((yoga, index) => (
-                    <Grid item xs={12} sm={6} md={4} key={index}>
-                      <Paper
-                        elevation={0}
-                        sx={{
-                          p: 2,
-                          height: '100%',
-                          border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                          borderRadius: 2,
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 600, mr: 1 }}>
-                            {yoga.planet}
-                          </Typography>
-                          <Chip
-                            label={yoga.yogaName}
-                            size="small"
-                            color="primary"
-                            variant="outlined"
-                            sx={{ mr: 1 }}
-                          />
-                          <Chip
-                            label={yoga.type}
-                            size="small"
-                            color="secondary"
-                            variant="outlined"
-                          />
-                        </Box>
-                        <Typography variant="body2" color="text.secondary">
-                          {yoga.description}
-                        </Typography>
-                      </Paper>
-                    </Grid>
-                  ))}
-                </Grid>
-              ) : (
-                <Typography variant="body1" color="text.secondary">
-                  No Pancha Mahapurusha Yogas are present in this chart.
-                </Typography>
-              )}
-            </Paper>
-          </Grid>
-
-          {/* Neecha Yoga */}
-          <Grid item xs={12}>
-            <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
-              <Typography variant="subtitle1" gutterBottom>
-                Neecha (Debilitation) Yoga
-              </Typography>
-
-              {neechaYogas.length > 0 ? (
-                <Grid container spacing={2}>
-                  {neechaYogas.map((yoga, index) => (
-                    <Grid item xs={12} sm={6} md={4} key={index}>
-                      <Paper
-                        elevation={0}
-                        sx={{
-                          p: 2,
-                          height: '100%',
-                          border: (theme) => `1px solid ${alpha(
-                            yoga.isDebilitationBroken ? theme.palette.warning.main : theme.palette.error.main,
-                            0.1
-                          )}`,
-                          borderRadius: 2,
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 600, mr: 1 }}>
-                            {yoga.planet}
-                          </Typography>
-                          <Chip
-                            label={yoga.type}
-                            size="small"
-                            color={yoga.isDebilitationBroken ? "warning" : "error"}
-                            variant="outlined"
-                          />
-                        </Box>
-                        <Typography variant="body2" color="text.secondary">
-                          {yoga.description}
-                        </Typography>
-                      </Paper>
-                    </Grid>
-                  ))}
-                </Grid>
-              ) : (
-                <Typography variant="body1" color="text.secondary">
-                  No Neecha Yogas are present in this chart.
-                </Typography>
-              )}
-            </Paper>
-          </Grid>
-
-          {/* Kendra Trikon Rajyoga */}
-          <Grid item xs={12}>
-            <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
-              <Typography variant="subtitle1" gutterBottom>
-                Kendra Trikon Rajyoga
-              </Typography>
-
-              {kendraTrikonYogas.length > 0 ? (
-                <Grid container spacing={2}>
-                  {kendraTrikonYogas.map((yoga, index) => (
-                    <Grid item xs={12} sm={6} md={4} key={index}>
-                      <Paper
-                        elevation={0}
-                        sx={{
-                          p: 2,
-                          height: '100%',
-                          border: (theme) => `1px solid ${alpha(theme.palette.success.main, 0.1)}`,
-                          borderRadius: 2,
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 600, mr: 1 }}>
-                            {yoga.planets.join(', ')}
-                          </Typography>
-                          <Chip
-                            label={yoga.type}
-                            size="small"
-                            color="success"
-                            variant="outlined"
-                          />
-                        </Box>
-                        <Typography variant="body2" color="text.secondary">
-                          {yoga.description}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                          Houses involved: {yoga.houses.join(', ')}
-                        </Typography>
-                      </Paper>
-                    </Grid>
-                  ))}
-                </Grid>
-              ) : (
-                <Typography variant="body1" color="text.secondary">
-                  No Kendra Trikon Rajyogas are present in this chart.
-                </Typography>
-              )}
-            </Paper>
-          </Grid>
-
-          {/* Wealth Yogas */}
-          <Grid item xs={12}>
-            <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
-              <Typography variant="subtitle1" gutterBottom>
-                Wealth Yogas
-              </Typography>
-
-              {wealthYogas.length > 0 ? (
-                <Grid container spacing={2}>
-                  {wealthYogas.map((yoga, index) => (
-                    <Grid item xs={12} sm={6} md={4} key={index}>
-                      <Paper
-                        elevation={0}
-                        sx={{
-                          p: 2,
-                          height: '100%',
-                          border: (theme) => `1px solid ${alpha(theme.palette.success.main, 0.1)}`,
-                          borderRadius: 2,
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 600, mr: 1 }}>
-                            {yoga.name}
-                          </Typography>
-                          <Chip
-                            label={yoga.type}
-                            size="small"
-                            color="success"
-                            variant="outlined"
-                            sx={{ mr: 1 }}
-                          />
-                          <Chip
-                            label={yoga.planets.join('-')}
-                            size="small"
-                            color="success"
-                            variant="outlined"
-                          />
-                        </Box>
-                        <Typography variant="body2" color="text.secondary">
-                          {yoga.description}
-                        </Typography>
-                      </Paper>
-                    </Grid>
-                  ))}
-                </Grid>
-              ) : (
-                <Typography variant="body1" color="text.secondary">
-                  No Wealth Yogas are present in this chart.
-                </Typography>
-              )}
-            </Paper>
-          </Grid>
-
-          {/* Vipreet Rajyoga */}
-          <Grid item xs={12}>
-            <Paper
-              elevation={0}
+            <Accordion
+              defaultExpanded={false}
               sx={{
-                p: 3,
-                mb: 3,
-                backgroundColor: (theme) => alpha(theme.palette.warning.main, 0.05),
-                borderRadius: 2,
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                borderRadius: '8px !important',
+                '&:before': { display: 'none' },
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" sx={{ mr: 1 }}>
-                  Vipreet Rajyoga
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Nakshatra Details
                 </Typography>
-                <Tooltip title="Vipreet Rajyoga is formed when lords of 6th, 8th, or 12th houses are placed in dusthana houses (6th, 8th, or 12th). These yogas indicate success through overcoming challenges and transforming difficulties into opportunities.">
-                  <InfoIcon color="action" fontSize="small" />
-                </Tooltip>
-              </Box>
-
-              {vipreetYogas.length > 0 ? (
+                <Chip label="9 planets" size="small" sx={{ ml: 1 }} variant="outlined" />
+              </AccordionSummary>
+              <AccordionDetails sx={{ pt: 0 }}>
                 <Grid container spacing={2}>
-                  {vipreetYogas.map((yoga, index) => (
-                    <Grid item xs={12} sm={6} md={4} key={index}>
-                      <Paper
-                        elevation={0}
-                        sx={{
-                          p: 2,
-                          height: '100%',
-                          border: (theme) => `1px solid ${alpha(theme.palette.warning.main, 0.1)}`,
-                          borderRadius: 2,
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 600, mr: 1 }}>
-                            {yoga.planet}
-                          </Typography>
-                          <Chip
-                            label={yoga.type}
-                            size="small"
-                            color="warning"
-                            variant="outlined"
-                            sx={{ mr: 1 }}
-                          />
-                          <Chip
-                            label={`House ${yoga.house}`}
-                            size="small"
-                            color="warning"
-                            variant="outlined"
-                          />
-                        </Box>
-                        <Typography variant="body2" color="text.secondary">
-                          {yoga.description}
-                        </Typography>
-                      </Paper>
-                    </Grid>
-                  ))}
+                  {nakshatraPlanets.map((planet) => {
+                    const planetKey = planet.toLowerCase();
+                    const planetColor = getPlanetColor(planetKey);
+                    const textColor = getTextColor(planetColor);
+                    const details = planetNakshatraDetails[planet];
+                    if (!details) return null;
+                    return (
+                      <Grid item xs={12} sm={6} md={4} key={planet}>
+                        <Paper
+                          elevation={0}
+                          sx={{
+                            p: 2,
+                            height: '100%',
+                            border: `2px solid ${alpha(planetColor, 0.3)}`,
+                            borderRadius: 2,
+                            backgroundColor: alpha(planetColor, 0.06),
+                            transition: 'box-shadow 0.2s ease',
+                            '&:hover': { boxShadow: `0 4px 12px ${alpha(planetColor, 0.2)}` },
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                            <Box
+                              sx={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: '50%',
+                                backgroundColor: planetColor,
+                                color: textColor,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 'bold',
+                                fontSize: '0.85rem',
+                              }}
+                            >
+                              {getPlanetAbbr(planetKey)}
+                            </Box>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: planetColor }}>
+                              {planet}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                            <Typography variant="body2">
+                              <strong>Sign:</strong> {details.zodiacSign}
+                            </Typography>
+                            <Typography variant="body2">
+                              <strong>Nakshatra:</strong> {details.nakshatra}
+                            </Typography>
+                            <Typography variant="body2">
+                              <strong>Pada:</strong> {details.pada}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              Longitude {details.planetLongitude}° · In sign: {details.degreeInsideZodiac}° · In nakshatra: {details.degreeInsideNakshatra}°
+                            </Typography>
+                          </Box>
+                        </Paper>
+                      </Grid>
+                    );
+                  })}
                 </Grid>
-              ) : (
-                <Typography variant="body1" color="text.secondary">
-                  No Vipreet Rajyoga is present in this chart.
-                </Typography>
-              )}
-            </Paper>
+              </AccordionDetails>
+            </Accordion>
           </Grid>
 
-          {/* Planetary Positions */}
+          {/* Maha Dasha Section - Expandable */}
           <Grid item xs={12}>
-            <Typography variant="h6" gutterBottom>
-              Planetary Positions
-            </Typography>
+            <Accordion
+              defaultExpanded={false}
+              sx={{
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                borderRadius: '8px !important',
+                '&:before': { display: 'none' },
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+              }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Maha Dasha Timeline
+                </Typography>
+                <Chip label="Vimshottari" size="small" sx={{ ml: 1 }} variant="outlined" />
+              </AccordionSummary>
+              <AccordionDetails sx={{ pt: 0 }}>
+                <Grid container spacing={2}>
+                  {mahaDashaPeriods.map((mahaDasha, idx) => {
+                    const planetKey = mahaDasha.planet.toLowerCase();
+                    const planetColor = getPlanetColor(planetKey);
+                    const textColor = getTextColor(planetColor);
+                    const startDate = idx === 0
+                      ? new Date(`${celebrity.birthDate.split("T")[0]}T${celebrity.birthTime}:00${celebrity.timeZone}`)
+                      : mahaDashaPeriods[idx - 1].end;
+                    return (
+                      <Grid item xs={12} sm={6} md={4} key={`${mahaDasha.planet}-${idx}`}>
+                        <Paper
+                          elevation={0}
+                          sx={{
+                            p: 2,
+                            height: '100%',
+                            borderLeft: `4px solid ${planetColor}`,
+                            borderRadius: 2,
+                            backgroundColor: alpha(planetColor, 0.06),
+                            transition: 'box-shadow 0.2s ease',
+                            '&:hover': { boxShadow: `0 4px 12px ${alpha(planetColor, 0.2)}` },
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                            <Box
+                              sx={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: '50%',
+                                backgroundColor: planetColor,
+                                color: textColor,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 'bold',
+                                fontSize: '0.85rem',
+                              }}
+                            >
+                              {getPlanetAbbr(planetKey)}
+                            </Box>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: planetColor }}>
+                              {mahaDasha.planet} Mahadasha
+                            </Typography>
+                          </Box>
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>Start:</strong> {startDate.toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>End:</strong> {mahaDasha.end.toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                          </Typography>
+                        </Paper>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              </AccordionDetails>
+            </Accordion>
           </Grid>
-          {Object.entries(celebrity.planets).map(([planet, data]) => (
-            <React.Fragment key={planet}>
-              <Grid item xs={12}>
-                <Typography variant="subtitle1" gutterBottom>
-                  {planet.charAt(0).toUpperCase() + planet.slice(1)}
+
+
+
+
+          {/* Yogas and Doshas Section - Expandable */}
+          <Grid item xs={12}>
+            <Accordion
+              defaultExpanded={false}
+              sx={{
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                borderRadius: '8px !important',
+                '&:before': { display: 'none' },
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+              }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Yogas and Dashas
                 </Typography>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Sign
+                <Chip
+                  label={`${(panchaMahapurushaYogas?.length || 0) + (neechaYogas?.length || 0) + (kendraTrikonYogas?.length || 0) + (wealthYogas?.length || 0) + (vipreetYogas?.length || 0)} yogas`}
+                  size="small"
+                  sx={{ ml: 1 }}
+                  variant="outlined"
+                />
+              </AccordionSummary>
+              <AccordionDetails sx={{ pt: 0 }}>
+                {/* Pancha Mahapurusha Rajyoga */}
+                <Grid item xs={12}>
+                  <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
+                    <Typography variant="subtitle1" gutterBottom>
+                      Pancha Mahapurusha Rajyoga
+                    </Typography>
+
+                    {panchaMahapurushaYogas.length > 0 ? (
+                      <Grid container spacing={2}>
+                        {panchaMahapurushaYogas.map((yoga, index) => (
+                          <Grid item xs={12} sm={6} md={4} key={index}>
+                            <Paper
+                              elevation={0}
+                              sx={{
+                                p: 2,
+                                height: '100%',
+                                border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                                borderRadius: 2,
+                                backgroundColor: (theme) => theme.palette.background.paper,
+                              }}
+                            >
+                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 600, mr: 1 }}>
+                                  {yoga.planet}
+                                </Typography>
+                                <Chip
+                                  label={yoga.yogaName}
+                                  size="small"
+                                  color="primary"
+                                  variant="outlined"
+                                  sx={{ mr: 1 }}
+                                />
+                                <Chip
+                                  label={yoga.type}
+                                  size="small"
+                                  color="secondary"
+                                  variant="outlined"
+                                />
+                              </Box>
+                              <Typography variant="body2" color="text.secondary">
+                                {yoga.description}
+                              </Typography>
+                            </Paper>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    ) : (
+                      <Typography variant="body1" color="text.secondary">
+                        No Pancha Mahapurusha Yogas are present in this chart.
+                      </Typography>
+                    )}
+                  </Paper>
+                </Grid>
+
+                {/* Neecha Yoga */}
+                <Grid item xs={12}>
+                  <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
+                    <Typography variant="subtitle1" gutterBottom>
+                      Neecha (Debilitation) Yoga
+                    </Typography>
+
+                    {neechaYogas.length > 0 ? (
+                      <Grid container spacing={2}>
+                        {neechaYogas.map((yoga, index) => (
+                          <Grid item xs={12} sm={6} md={4} key={index}>
+                            <Paper
+                              elevation={0}
+                              sx={{
+                                p: 2,
+                                height: '100%',
+                                border: (theme) => `1px solid ${alpha(
+                                  yoga.isDebilitationBroken ? theme.palette.warning.main : theme.palette.error.main,
+                                  0.1
+                                )}`,
+                                borderRadius: 2,
+                                backgroundColor: (theme) => theme.palette.background.paper,
+                              }}
+                            >
+                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 600, mr: 1 }}>
+                                  {yoga.planet}
+                                </Typography>
+                                <Chip
+                                  label={yoga.type}
+                                  size="small"
+                                  color={yoga.isDebilitationBroken ? "warning" : "error"}
+                                  variant="outlined"
+                                />
+                              </Box>
+                              <Typography variant="body2" color="text.secondary">
+                                {yoga.description}
+                              </Typography>
+                            </Paper>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    ) : (
+                      <Typography variant="body1" color="text.secondary">
+                        No Neecha Yogas are present in this chart.
+                      </Typography>
+                    )}
+                  </Paper>
+                </Grid>
+
+                {/* Kendra Trikon Rajyoga */}
+                <Grid item xs={12}>
+                  <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
+                    <Typography variant="subtitle1" gutterBottom>
+                      Kendra Trikon Rajyoga
+                    </Typography>
+
+                    {kendraTrikonYogas.length > 0 ? (
+                      <Grid container spacing={2}>
+                        {kendraTrikonYogas.map((yoga, index) => (
+                          <Grid item xs={12} sm={6} md={4} key={index}>
+                            <Paper
+                              elevation={0}
+                              sx={{
+                                p: 2,
+                                height: '100%',
+                                border: (theme) => `1px solid ${alpha(theme.palette.success.main, 0.1)}`,
+                                borderRadius: 2,
+                                backgroundColor: (theme) => theme.palette.background.paper,
+                              }}
+                            >
+                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 600, mr: 1 }}>
+                                  {yoga.planets.join(', ')}
+                                </Typography>
+                                <Chip
+                                  label={yoga.type}
+                                  size="small"
+                                  color="success"
+                                  variant="outlined"
+                                />
+                              </Box>
+                              <Typography variant="body2" color="text.secondary">
+                                {yoga.description}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                                Houses involved: {yoga.houses.join(', ')}
+                              </Typography>
+                            </Paper>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    ) : (
+                      <Typography variant="body1" color="text.secondary">
+                        No Kendra Trikon Rajyogas are present in this chart.
+                      </Typography>
+                    )}
+                  </Paper>
+                </Grid>
+
+                {/* Wealth Yogas */}
+                <Grid item xs={12}>
+                  <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
+                    <Typography variant="subtitle1" gutterBottom>
+                      Wealth Yogas
+                    </Typography>
+
+                    {wealthYogas.length > 0 ? (
+                      <Grid container spacing={2}>
+                        {wealthYogas.map((yoga, index) => (
+                          <Grid item xs={12} sm={6} md={4} key={index}>
+                            <Paper
+                              elevation={0}
+                              sx={{
+                                p: 2,
+                                height: '100%',
+                                border: (theme) => `1px solid ${alpha(theme.palette.success.main, 0.1)}`,
+                                borderRadius: 2,
+                                backgroundColor: (theme) => theme.palette.background.paper,
+                              }}
+                            >
+                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 600, mr: 1 }}>
+                                  {yoga.name}
+                                </Typography>
+                                <Chip
+                                  label={yoga.type}
+                                  size="small"
+                                  color="success"
+                                  variant="outlined"
+                                  sx={{ mr: 1 }}
+                                />
+                                <Chip
+                                  label={yoga.planets.join('-')}
+                                  size="small"
+                                  color="success"
+                                  variant="outlined"
+                                />
+                              </Box>
+                              <Typography variant="body2" color="text.secondary">
+                                {yoga.description}
+                              </Typography>
+                            </Paper>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    ) : (
+                      <Typography variant="body1" color="text.secondary">
+                        No Wealth Yogas are present in this chart.
+                      </Typography>
+                    )}
+                  </Paper>
+                </Grid>
+
+                {/* Vipreet Rajyoga */}
+                <Grid item xs={12}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 3,
+                      mb: 3,
+                      backgroundColor: (theme) => alpha(theme.palette.warning.main, 0.05),
+                      borderRadius: 2,
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <Typography variant="h6" sx={{ mr: 1 }}>
+                        Vipreet Rajyoga
+                      </Typography>
+                      <Tooltip title="Vipreet Rajyoga is formed when lords of 6th, 8th, or 12th houses are placed in dusthana houses (6th, 8th, or 12th). These yogas indicate success through overcoming challenges and transforming difficulties into opportunities.">
+                        <InfoIcon color="action" fontSize="small" />
+                      </Tooltip>
+                    </Box>
+
+                    {vipreetYogas.length > 0 ? (
+                      <Grid container spacing={2}>
+                        {vipreetYogas.map((yoga, index) => (
+                          <Grid item xs={12} sm={6} md={4} key={index}>
+                            <Paper
+                              elevation={0}
+                              sx={{
+                                p: 2,
+                                height: '100%',
+                                border: (theme) => `1px solid ${alpha(theme.palette.warning.main, 0.1)}`,
+                                borderRadius: 2,
+                                backgroundColor: (theme) => theme.palette.background.paper,
+                              }}
+                            >
+                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 600, mr: 1 }}>
+                                  {yoga.planet}
+                                </Typography>
+                                <Chip
+                                  label={yoga.type}
+                                  size="small"
+                                  color="warning"
+                                  variant="outlined"
+                                  sx={{ mr: 1 }}
+                                />
+                                <Chip
+                                  label={`House ${yoga.house}`}
+                                  size="small"
+                                  color="warning"
+                                  variant="outlined"
+                                />
+                              </Box>
+                              <Typography variant="body2" color="text.secondary">
+                                {yoga.description}
+                              </Typography>
+                            </Paper>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    ) : (
+                      <Typography variant="body1" color="text.secondary">
+                        No Vipreet Rajyoga is present in this chart.
+                      </Typography>
+                    )}
+                  </Paper>
+                </Grid>
+
+              </AccordionDetails>
+            </Accordion>
+          </Grid>
+
+          {/* Planetary Positions - Expandable with Degree, Nakshatra, Pada */}
+          <Grid item xs={12}>
+            <Accordion
+              defaultExpanded={false}
+              sx={{
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                borderRadius: '8px !important',
+                '&:before': { display: 'none' },
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+              }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Planetary Positions
                 </Typography>
-                <Typography variant="body1">
-                  {data.sign}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  House
-                </Typography>
-                <Typography variant="body1">
-                  {data.house}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Degree
-                </Typography>
-                <Typography variant="body1">
-                  {data.degree}°
-                </Typography>
-              </Grid>
-            </React.Fragment>
-          ))}
+                <Chip label={`${Object.keys(celebrity.planets).length} planets`} size="small" sx={{ ml: 1 }} variant="outlined" />
+              </AccordionSummary>
+              <AccordionDetails sx={{ pt: 0 }}>
+                <Grid container spacing={2}>
+                  {Object.entries(celebrity.planets).map(([planet, data]) => {
+                    const planetColor = getPlanetColor(planet);
+                    const textColor = getTextColor(planetColor);
+                    const planetCap = planet.charAt(0).toUpperCase() + planet.slice(1);
+                    const nakshatraDetail = planetNakshatraDetails[planetCap];
+                    return (
+                      <Grid item xs={12} sm={6} md={4} key={planet}>
+                        <Paper
+                          elevation={0}
+                          sx={{
+                            p: 2,
+                            height: '100%',
+                            borderLeft: `4px solid ${planetColor}`,
+                            borderRadius: 2,
+                            backgroundColor: alpha(planetColor, 0.06),
+                            transition: 'box-shadow 0.2s ease',
+                            '&:hover': { boxShadow: `0 4px 12px ${alpha(planetColor, 0.2)}` },
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                            <Box
+                              sx={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: '50%',
+                                backgroundColor: planetColor,
+                                color: textColor,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 'bold',
+                                fontSize: '0.85rem',
+                              }}
+                            >
+                              {getPlanetAbbr(planet)}
+                            </Box>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: planetColor }}>
+                              {planetCap}
+                            </Typography>
+                          </Box>
+                          <Grid container spacing={1}>
+                            <Grid item xs={6}>
+                              <Typography variant="body2" color="text.secondary">Sign</Typography>
+                              <Typography variant="body2" fontWeight={500}>{data.sign}</Typography>
+                            </Grid>
+                            <Grid item xs={6}>
+                              <Typography variant="body2" color="text.secondary">House</Typography>
+                              <Typography variant="body2" fontWeight={500}>{data.house}</Typography>
+                            </Grid>
+                            <Grid item xs={6}>
+                              <Typography variant="body2" color="text.secondary">Degree</Typography>
+                              <Typography variant="body2" fontWeight={500}>{data.degree}°</Typography>
+                            </Grid>
+                            {nakshatraDetail && (
+                              <>
+                                <Grid item xs={6}>
+                                  <Typography variant="body2" color="text.secondary">Nakshatra</Typography>
+                                  <Typography variant="body2" fontWeight={500}>{nakshatraDetail.nakshatra}</Typography>
+                                </Grid>
+                                <Grid item xs={6}>
+                                  <Typography variant="body2" color="text.secondary">Pada</Typography>
+                                  <Typography variant="body2" fontWeight={500}>{nakshatraDetail.pada}</Typography>
+                                </Grid>
+                              </>
+                            )}
+                          </Grid>
+                        </Paper>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              </AccordionDetails>
+            </Accordion>
+          </Grid>
 
           <Grid item xs={12}>
             <Divider sx={{ my: 3 }} />
