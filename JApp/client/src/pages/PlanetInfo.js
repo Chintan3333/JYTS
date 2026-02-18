@@ -563,6 +563,11 @@ function PlanetInfo() {
                           </Grid>
                           <Grid item xs={6}>
                             <Typography variant="body2">
+                              <strong>Movement:</strong> {nakshatra.movement}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="body2">
                               <strong>Animal:</strong> {nakshatra.animal}
                             </Typography>
                           </Grid>
@@ -571,7 +576,7 @@ function PlanetInfo() {
                               <strong>Bird:</strong> {nakshatra.bird}
                             </Typography>
                           </Grid>
-                          <Grid item xs={12}>
+                          <Grid item xs={6}>
                             <Typography variant="body2">
                               <strong>Tree:</strong> {nakshatra.tree}
                             </Typography>

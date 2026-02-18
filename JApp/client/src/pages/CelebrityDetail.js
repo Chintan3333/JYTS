@@ -863,7 +863,12 @@ const checkPlanetNakshatraDetails = (date, planet) => {
   } else if (planet == 'Rahu' || planet == 'Ketu') {
     const node = SearchMoonNode(date);
     ecl = Ecliptic(GeoMoon(node.time));
-    ecl = planet == 'Rahu' ? ecl.elon : ecl.elon + 180 ;
+    console.log('rahu ketu data', node);
+    if (planet == 'Rahu') {
+      ecl = node.kind == 1 ? ecl.elon : (ecl.elon + 180) % 360;
+    } else if (planet == 'Ketu') {
+      ecl = node.kind == -1 ? ecl.elon : (ecl.elon + 180) % 360;
+    }
   } else {
     const vec = GeoVector(Body[planet], date, true);
     ecl = Ecliptic(vec);

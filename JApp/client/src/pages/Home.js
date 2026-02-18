@@ -11,6 +11,7 @@ import {
   alpha,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ListIcon from '@mui/icons-material/List';
 import SearchIcon from '@mui/icons-material/Search';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
@@ -24,6 +25,13 @@ function Home() {
       description: 'Add detailed kundli information for new celebrities to the database',
       icon: <AddIcon sx={{ fontSize: 40 }} />,
       path: '/celebrities/new',
+      variant: 'contained',
+    },
+    {
+      title: 'Generate Celebrity Chart',
+      description: 'Calculate ascendant and planet positions from birth date, time and location (lat/lon)',
+      icon: <AutoAwesomeIcon sx={{ fontSize: 40 }} />,
+      path: '/celebrities/generate',
       variant: 'contained',
     },
     {

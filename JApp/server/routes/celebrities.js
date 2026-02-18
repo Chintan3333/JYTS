@@ -62,7 +62,7 @@ router.delete('/:id', async (req, res) => {
             return res.status(404).json({ message: 'Celebrity not found' });
         }
 
-        await celebrity.remove();
+        await Celebrity.deleteOne({ _id: req.params.id });
         res.json({ message: 'Celebrity deleted' });
     } catch (err) {
         res.status(500).json({ message: err.message });

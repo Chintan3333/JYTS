@@ -19,6 +19,7 @@ import {
   alpha,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import SearchIcon from '@mui/icons-material/Search';
 import InfoIcon from '@mui/icons-material/Info';
@@ -59,6 +60,11 @@ function Navbar({ onToggleTheme, mode }) {
       title: 'Add Celebrity',
       path: '/celebrities/new',
       icon: <AddIcon />,
+    },
+    {
+      title: 'Generate Celebrity Chart',
+      path: '/celebrities/generate',
+      icon: <AutoAwesomeIcon />,
     },
   ];
 

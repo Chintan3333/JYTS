@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import CelebrityList from './pages/CelebrityList';
 import CelebrityForm from './pages/CelebrityForm';
+import GenerateCelebrityChart from './pages/GenerateCelebrityChart';
 import CelebrityDetail from './pages/CelebrityDetail';
 import Analysis from './pages/Analysis';
 import AdvancedSearch from './pages/AdvancedSearch';
@@ -28,6 +29,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/celebrities" element={<CelebrityList />} />
           <Route path="/celebrities/new" element={<CelebrityForm />} />
+          <Route path="/celebrities/generate" element={<GenerateCelebrityChart />} />
           <Route path="/celebrities/:id" element={<CelebrityDetail />} />
           <Route path="/celebrities/:id/edit" element={<CelebrityForm />} />
           <Route path="/analysis" element={<Analysis />} />
