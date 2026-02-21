@@ -30,6 +30,7 @@ function App() {
           <Route path="/celebrities" element={<CelebrityList />} />
           <Route path="/celebrities/new" element={<CelebrityForm />} />
           <Route path="/celebrities/generate" element={<GenerateCelebrityChart />} />
+          <Route path="/celebrities/:id/regenerate" element={<GenerateCelebrityChart />} />
           <Route path="/celebrities/:id" element={<CelebrityDetail />} />
           <Route path="/celebrities/:id/edit" element={<CelebrityForm />} />
           <Route path="/analysis" element={<Analysis />} />

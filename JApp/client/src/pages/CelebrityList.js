@@ -22,6 +22,7 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 
 function CelebrityList() {
   const [celebrities, setCelebrities] = useState([]);
@@ -189,6 +190,15 @@ function CelebrityList() {
                         color="secondary"
                       >
                         Edit
+                      </Button>
+                      <Button
+                        size="small"
+                        component={RouterLink}
+                        to={`/celebrities/${celebrity._id}/regenerate`}
+                        startIcon={<AutoAwesomeIcon />}
+                        color="info"
+                      >
+                        Re-generate
                       </Button>
                       <Button
                         size="small"

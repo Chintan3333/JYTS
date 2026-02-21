@@ -17,6 +17,14 @@ const CelebritySchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    latitude: {
+        type: Number,
+        default: 0
+    },
+    longitude: {
+        type: Number,
+        default: 0
+    },
     category: {
         type: String,
         required: true,

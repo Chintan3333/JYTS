@@ -842,15 +842,11 @@ function calculateMahadasha(birthDate, nakshatra, degreeInsideNakshatra) {
 
   return results;
 }
-
-
 function lahiriAyanamsa(date) {
-  const year = date.getUTCFullYear();
-  return 24 + (year - 2000) * 0.01397;
-
-  // const jd = MakeTime(date).tt + 2400000.5;
-  // return 22.460148 + 1.396042 * (jd - 2451545.0) / 36525;
+  const year = date.getUTCFullYear() + (date.getUTCMonth() + 1) / 12;
+  return (year - 285) * 50.290966 / 3600;
 }
+
 
 
 const checkPlanetNakshatraDetails = (date, planet) => {

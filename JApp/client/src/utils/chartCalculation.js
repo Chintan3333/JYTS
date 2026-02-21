@@ -3,11 +3,6 @@
  * Computes ascendant from latitude/longitude and planet positions (sidereal).
  */
 import {
-  MakeTime,
-  Observer,
-  Rotation_HOR_ECL,
-  RotateVector,
-  Vector,
   EclipticGeoMoon,
   Ecliptic,
   GeoVector,
@@ -21,9 +16,11 @@ const ZODIAC = [
   'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces',
 ];
 
+
+
 function lahiriAyanamsa(date) {
-  const year = date.getUTCFullYear();
-  return 24 + (year - 2000) * 0.01397;
+  const year = date.getUTCFullYear() + (date.getUTCMonth() + 1) / 12;
+  return (year - 285) * 50.290966 / 3600;
 }
 
 /**
@@ -59,6 +56,32 @@ function getPlanetSiderealLongitude(date, planet) {
   return tropicalToSiderealLongitude(eclLonDeg, date);
 }
 
+
+
+function toJulianDate(date) {
+  return date / 86400000 + 2440587.5;
+}
+
+function getGMST(date) {
+  const JD = toJulianDate(date);
+  const T = (JD - 2451545.0) / 36525;
+
+  let GMST = 280.46061837 +
+    360.98564736629 * (JD - 2451545) +
+    0.000387933 * T * T -
+    (T * T * T) / 38710000;
+
+  return (GMST % 360 + 360) % 360;
+}
+
+function getLST(date, longitude) {
+  const GMST = getGMST(date);
+  const LST = GMST + longitude;
+  return (LST % 360 + 360) % 360;
+}
+
+
+
 /**
  * Calculate ascendant (Lagna) from birth date, latitude and longitude.
  * Uses eastern horizon direction converted to ecliptic (astronomy-engine).
@@ -68,20 +91,41 @@ function getPlanetSiderealLongitude(date, planet) {
  * @returns {{ sign: string, degree: number }} Ascendant sign and degree in sign
  */
 export function calculateAscendant(date, lat, lon) {
-  const time = MakeTime(date);
-  const observer = new Observer(lat, lon, 0);
-  const rot = Rotation_HOR_ECL(time, observer);
-  // HOR: x=north, y=west, z=zenith. East = (0, -1, 0)
-  const eastHorizon = new Vector(0, -1, 0, time);
-  const eclVec = RotateVector(rot, eastHorizon);
-  let tropicalLon = (Math.atan2(eclVec.y, eclVec.x) * (180 / Math.PI) + 360) % 360;
-  const siderealLon = tropicalToSiderealLongitude(tropicalLon, date);
-  const signIndex = Math.floor(siderealLon / 30) % 12;
+
+  const rad = Math.PI / 180;
+  const deg = 180 / Math.PI;
+
+  const epsilon = 23.439291; // Earth's axial tilt
+
+  const LST = getLST(date, lon);
+
+  const lstRad = LST * rad;
+  const latRad = lat * rad;
+  const epsRad = epsilon * rad;
+
+  const numerator = -Math.cos(lstRad);
+  const denominator =
+    Math.sin(lstRad) * Math.cos(epsRad) +
+    Math.tan(latRad) * Math.sin(epsRad);
+
+  let asc = Math.atan2(numerator, denominator) * deg;
+
+  asc = (asc + 180 + 360) % 360;
+  let tropicalLon = asc;
+
+  // Convert to sidereal
+  const siderealLon =
+    tropicalToSiderealLongitude(tropicalLon, date);
+  console.log('side longitude', siderealLon);
+
+  const signIndex = Math.floor(siderealLon / 30);
   const degreeInSign = siderealLon % 30;
+
   return {
     sign: ZODIAC[signIndex],
-    degree: Math.round(degreeInSign * 100) / 100,
+    degree: Number(degreeInSign.toFixed(2))
   };
+
 }
 
 /**

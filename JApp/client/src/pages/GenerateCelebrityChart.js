@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import {
   Container,
@@ -17,8 +17,10 @@ import { calculateChart } from '../utils/chartCalculation';
 const categories = ['Business', 'Politics', 'Entertainment', 'Sports', 'Science', 'Other'];
 
 function GenerateCelebrityChart() {
+  const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(false);
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -31,6 +33,37 @@ function GenerateCelebrityChart() {
     category: 'Business',
     dataAccuracy: 'good',
   });
+
+  useEffect(() => {
+    if (!id) {
+      return;
+    }
+
+    const fetchCelebrity = async () => {
+      try {
+        setInitialLoading(true);
+        const response = await axios.get(`https://jyts-app-backend.onrender.com/api/celebrities/${id}`);
+        const celebrity = response.data;
+        setFormData({
+          name: celebrity.name || '',
+          birthDate: celebrity.birthDate ? new Date(celebrity.birthDate).toISOString().split('T')[0] : '1990-01-01',
+          birthTime: celebrity.birthTime || '12:00',
+          birthPlace: celebrity.birthPlace || '',
+          latitude: celebrity.latitude ?? 0,
+          longitude: celebrity.longitude ?? 0,
+          timeZone: celebrity.timeZone || '+05:30',
+          category: celebrity.category || 'Business',
+          dataAccuracy: celebrity.dataAccuracy || 'good',
+        });
+      } catch (err) {
+        setError('Failed to load celebrity details for re-generation.');
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    fetchCelebrity();
+  }, [id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -61,12 +94,16 @@ function GenerateCelebrityChart() {
         setLoading(false);
         return;
       }
+      console.log(' time here at generate', lat, lon, birthDateTime);
+
       const { ascendant, planets } = calculateChart(birthDateTime, lat, lon);
       const payload = {
         name: formData.name,
         birthDate: new Date(`${dateStr}T00:00:00Z`).toISOString(),
         birthTime: timeStr,
         birthPlace: formData.birthPlace || `${lat.toFixed(4)}°, ${lon.toFixed(4)}°`,
+        latitude: lat,
+        longitude: lon,
         category: formData.category,
         timeZone: tz,
         dataAccuracy: formData.dataAccuracy,
@@ -86,13 +123,26 @@ function GenerateCelebrityChart() {
           ketu: planets.ketu,
         },
       };
-      const response = await axios.post('https://jyts-app-backend.onrender.com/api/celebrities', payload);
-      navigate(`/celebrities/${response.data._id}`);
+      if (id) {
+        const response = await axios.put(`https://jyts-app-backend.onrender.com/api/celebrities/${id}`, payload);
+        navigate(`/celebrities/${response.data._id}`);
+      } else {
+        const response = await axios.post('https://jyts-app-backend.onrender.com/api/celebrities', payload);
+        navigate(`/celebrities/${response.data._id}`);
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to generate chart and save celebrity.');
       setLoading(false);
     }
   };
+
+  if (initialLoading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
@@ -100,7 +150,7 @@ function GenerateCelebrityChart() {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
           <AutoAwesomeIcon color="primary" fontSize="medium" />
           <Typography variant="h4" component="h1">
-            Generate Celebrity Chart
+            {id ? 'Re-generate Celebrity Chart' : 'Generate Celebrity Chart'}
           </Typography>
         </Box>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
@@ -249,7 +299,7 @@ function GenerateCelebrityChart() {
                   disabled={loading}
                   startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <AutoAwesomeIcon />}
                 >
-                  {loading ? 'Generating…' : 'Generate Chart & Save'}
+                  {loading ? 'Generating…' : id ? 'Re-generate & Update' : 'Generate Chart & Save'}
                 </Button>
               </Box>
             </Grid>
