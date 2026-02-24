@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { planetInfo, houseInfo, planetInSignTraits, houseLordInHouseEffects, planetInHouseEffects } from '../data/astrologyData';
+import { getPlanetNakshatraPrediction } from '../data/planetInNakshatraData';
 import {
   Container,
   Typography,
@@ -919,7 +920,7 @@ function CelebrityDetail() {
 
   const fetchCelebrity = async () => {
     try {
-      const response = await axios.get(`https://jyts-app-backend.onrender.com/api/celebrities/${id}`);
+      const response = await axios.get(`http://localhost:5000/api/celebrities/${id}`);
       const data = response.data;
       if (data) {
         setCelebrity(data);
@@ -1105,20 +1106,44 @@ function CelebrityDetail() {
               {celebrity.timeZone}
             </Typography>
           </Grid>
-          <Grid item xs={12}>
+          <Grid item xs={12} sm={6}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Lattitude
+            </Typography>
+            <Typography variant="body1">
+              {celebrity.latitude} {celebrity.latitude < 0 ? 'S' : 'N'}
+            </Typography>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Longitude
+            </Typography>
+            <Typography variant="body1">
+              {celebrity.longitude} {celebrity.longitude < 0 ? 'W' : 'E'}
+            </Typography>
+          </Grid>
+          <Grid item xs={12} sm={6}>
             <Typography variant="subtitle2" color="text.secondary">
               Category
             </Typography>
             <Typography variant="body1">
-              {celebrity.category}
+              {celebrity.category} 
             </Typography>
           </Grid>
-          <Grid item xs={12}>
+          <Grid item xs={12} sm={6}>
             <Typography variant="subtitle2" color="text.secondary">
               Data Accuracy
             </Typography>
             <Typography variant="body1">
               {celebrity.dataAccuracy ? celebrity.dataAccuracy.charAt(0).toUpperCase() + celebrity.dataAccuracy.slice(1) : 'Good'}
+            </Typography>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Ascendant (Lagna)
+            </Typography>
+            <Typography variant="body1">
+              {celebrity.ascendant?.sign} {celebrity.ascendant?.degree}°
             </Typography>
           </Grid>
 
@@ -1187,21 +1212,38 @@ function CelebrityDetail() {
                         if (data.house === 2) {
                           const bgColor = getPlanetColor(planet);
                           const textColor = getTextColor(bgColor);
+                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
                           return (
-                            <Box
+                            <Tooltip
                               key={planet}
-                              sx={{
-                                backgroundColor: bgColor,
-                                color: textColor,
-                                padding: '2px 4px',
-                                borderRadius: '4px',
-                                fontSize: '0.8rem',
-                                fontWeight: 'bold',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                              }}
+                              title={
+                                <>
+                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
+                                  {nakDetail && (
+                                    <>
+                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
+                                    </>
+                                  )}
+                                </>
+                              }
+                              arrow
+                              placement="top"
                             >
-                              {getPlanetAbbr(planet)}
-                            </Box>
+                              <Box
+                                sx={{
+                                  backgroundColor: bgColor,
+                                  color: textColor,
+                                  padding: '2px 4px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                  cursor: 'help',
+                                }}
+                              >
+                                {getPlanetAbbr(planet)}
+                              </Box>
+                            </Tooltip>
                           );
                         }
                         return null;
@@ -1230,21 +1272,38 @@ function CelebrityDetail() {
                         if (data.house === 12) {
                           const bgColor = getPlanetColor(planet);
                           const textColor = getTextColor(bgColor);
+                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
                           return (
-                            <Box
+                            <Tooltip
                               key={planet}
-                              sx={{
-                                backgroundColor: bgColor,
-                                color: textColor,
-                                padding: '2px 4px',
-                                borderRadius: '4px',
-                                fontSize: '0.8rem',
-                                fontWeight: 'bold',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                              }}
+                              title={
+                                <>
+                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
+                                  {nakDetail && (
+                                    <>
+                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
+                                    </>
+                                  )}
+                                </>
+                              }
+                              arrow
+                              placement="top"
                             >
-                              {getPlanetAbbr(planet)}
-                            </Box>
+                              <Box
+                                sx={{
+                                  backgroundColor: bgColor,
+                                  color: textColor,
+                                  padding: '2px 4px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                  cursor: 'help',
+                                }}
+                              >
+                                {getPlanetAbbr(planet)}
+                              </Box>
+                            </Tooltip>
                           );
                         }
                         return null;
@@ -1275,21 +1334,38 @@ function CelebrityDetail() {
                         if (data.house === 3) {
                           const bgColor = getPlanetColor(planet);
                           const textColor = getTextColor(bgColor);
+                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
                           return (
-                            <Box
+                            <Tooltip
                               key={planet}
-                              sx={{
-                                backgroundColor: bgColor,
-                                color: textColor,
-                                padding: '2px 4px',
-                                borderRadius: '4px',
-                                fontSize: '0.8rem',
-                                fontWeight: 'bold',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                              }}
+                              title={
+                                <>
+                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
+                                  {nakDetail && (
+                                    <>
+                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
+                                    </>
+                                  )}
+                                </>
+                              }
+                              arrow
+                              placement="top"
                             >
-                              {getPlanetAbbr(planet)}
-                            </Box>
+                              <Box
+                                sx={{
+                                  backgroundColor: bgColor,
+                                  color: textColor,
+                                  padding: '2px 4px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                  cursor: 'help',
+                                }}
+                              >
+                                {getPlanetAbbr(planet)}
+                              </Box>
+                            </Tooltip>
                           );
                         }
                         return null;
@@ -1318,21 +1394,38 @@ function CelebrityDetail() {
                         if (data.house === 1) {
                           const bgColor = getPlanetColor(planet);
                           const textColor = getTextColor(bgColor);
+                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
                           return (
-                            <Box
+                            <Tooltip
                               key={planet}
-                              sx={{
-                                backgroundColor: bgColor,
-                                color: textColor,
-                                padding: '2px 4px',
-                                borderRadius: '4px',
-                                fontSize: '0.8rem',
-                                fontWeight: 'bold',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                              }}
+                              title={
+                                <>
+                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
+                                  {nakDetail && (
+                                    <>
+                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
+                                    </>
+                                  )}
+                                </>
+                              }
+                              arrow
+                              placement="top"
                             >
-                              {getPlanetAbbr(planet)}
-                            </Box>
+                              <Box
+                                sx={{
+                                  backgroundColor: bgColor,
+                                  color: textColor,
+                                  padding: '2px 4px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                  cursor: 'help',
+                                }}
+                              >
+                                {getPlanetAbbr(planet)}
+                              </Box>
+                            </Tooltip>
                           );
                         }
                         return null;
@@ -1361,21 +1454,38 @@ function CelebrityDetail() {
                         if (data.house === 11) {
                           const bgColor = getPlanetColor(planet);
                           const textColor = getTextColor(bgColor);
+                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
                           return (
-                            <Box
+                            <Tooltip
                               key={planet}
-                              sx={{
-                                backgroundColor: bgColor,
-                                color: textColor,
-                                padding: '2px 4px',
-                                borderRadius: '4px',
-                                fontSize: '0.8rem',
-                                fontWeight: 'bold',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                              }}
+                              title={
+                                <>
+                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
+                                  {nakDetail && (
+                                    <>
+                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
+                                    </>
+                                  )}
+                                </>
+                              }
+                              arrow
+                              placement="top"
                             >
-                              {getPlanetAbbr(planet)}
-                            </Box>
+                              <Box
+                                sx={{
+                                  backgroundColor: bgColor,
+                                  color: textColor,
+                                  padding: '2px 4px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                  cursor: 'help',
+                                }}
+                              >
+                                {getPlanetAbbr(planet)}
+                              </Box>
+                            </Tooltip>
                           );
                         }
                         return null;
@@ -1406,21 +1516,38 @@ function CelebrityDetail() {
                         if (data.house === 4) {
                           const bgColor = getPlanetColor(planet);
                           const textColor = getTextColor(bgColor);
+                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
                           return (
-                            <Box
+                            <Tooltip
                               key={planet}
-                              sx={{
-                                backgroundColor: bgColor,
-                                color: textColor,
-                                padding: '2px 4px',
-                                borderRadius: '4px',
-                                fontSize: '0.8rem',
-                                fontWeight: 'bold',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                              }}
+                              title={
+                                <>
+                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
+                                  {nakDetail && (
+                                    <>
+                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
+                                    </>
+                                  )}
+                                </>
+                              }
+                              arrow
+                              placement="top"
                             >
-                              {getPlanetAbbr(planet)}
-                            </Box>
+                              <Box
+                                sx={{
+                                  backgroundColor: bgColor,
+                                  color: textColor,
+                                  padding: '2px 4px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                  cursor: 'help',
+                                }}
+                              >
+                                {getPlanetAbbr(planet)}
+                              </Box>
+                            </Tooltip>
                           );
                         }
                         return null;
@@ -1449,21 +1576,38 @@ function CelebrityDetail() {
                         if (data.house === 10) {
                           const bgColor = getPlanetColor(planet);
                           const textColor = getTextColor(bgColor);
+                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
                           return (
-                            <Box
+                            <Tooltip
                               key={planet}
-                              sx={{
-                                backgroundColor: bgColor,
-                                color: textColor,
-                                padding: '2px 4px',
-                                borderRadius: '4px',
-                                fontSize: '0.8rem',
-                                fontWeight: 'bold',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                              }}
+                              title={
+                                <>
+                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
+                                  {nakDetail && (
+                                    <>
+                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
+                                    </>
+                                  )}
+                                </>
+                              }
+                              arrow
+                              placement="top"
                             >
-                              {getPlanetAbbr(planet)}
-                            </Box>
+                              <Box
+                                sx={{
+                                  backgroundColor: bgColor,
+                                  color: textColor,
+                                  padding: '2px 4px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                  cursor: 'help',
+                                }}
+                              >
+                                {getPlanetAbbr(planet)}
+                              </Box>
+                            </Tooltip>
                           );
                         }
                         return null;
@@ -1494,21 +1638,38 @@ function CelebrityDetail() {
                         if (data.house === 5) {
                           const bgColor = getPlanetColor(planet);
                           const textColor = getTextColor(bgColor);
+                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
                           return (
-                            <Box
+                            <Tooltip
                               key={planet}
-                              sx={{
-                                backgroundColor: bgColor,
-                                color: textColor,
-                                padding: '2px 4px',
-                                borderRadius: '4px',
-                                fontSize: '0.8rem',
-                                fontWeight: 'bold',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                              }}
+                              title={
+                                <>
+                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
+                                  {nakDetail && (
+                                    <>
+                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
+                                    </>
+                                  )}
+                                </>
+                              }
+                              arrow
+                              placement="top"
                             >
-                              {getPlanetAbbr(planet)}
-                            </Box>
+                              <Box
+                                sx={{
+                                  backgroundColor: bgColor,
+                                  color: textColor,
+                                  padding: '2px 4px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                  cursor: 'help',
+                                }}
+                              >
+                                {getPlanetAbbr(planet)}
+                              </Box>
+                            </Tooltip>
                           );
                         }
                         return null;
@@ -1537,21 +1698,38 @@ function CelebrityDetail() {
                         if (data.house === 7) {
                           const bgColor = getPlanetColor(planet);
                           const textColor = getTextColor(bgColor);
+                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
                           return (
-                            <Box
+                            <Tooltip
                               key={planet}
-                              sx={{
-                                backgroundColor: bgColor,
-                                color: textColor,
-                                padding: '2px 4px',
-                                borderRadius: '4px',
-                                fontSize: '0.8rem',
-                                fontWeight: 'bold',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                              }}
+                              title={
+                                <>
+                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
+                                  {nakDetail && (
+                                    <>
+                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
+                                    </>
+                                  )}
+                                </>
+                              }
+                              arrow
+                              placement="top"
                             >
-                              {getPlanetAbbr(planet)}
-                            </Box>
+                              <Box
+                                sx={{
+                                  backgroundColor: bgColor,
+                                  color: textColor,
+                                  padding: '2px 4px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                  cursor: 'help',
+                                }}
+                              >
+                                {getPlanetAbbr(planet)}
+                              </Box>
+                            </Tooltip>
                           );
                         }
                         return null;
@@ -1580,21 +1758,38 @@ function CelebrityDetail() {
                         if (data.house === 9) {
                           const bgColor = getPlanetColor(planet);
                           const textColor = getTextColor(bgColor);
+                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
                           return (
-                            <Box
+                            <Tooltip
                               key={planet}
-                              sx={{
-                                backgroundColor: bgColor,
-                                color: textColor,
-                                padding: '2px 4px',
-                                borderRadius: '4px',
-                                fontSize: '0.8rem',
-                                fontWeight: 'bold',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                              }}
+                              title={
+                                <>
+                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
+                                  {nakDetail && (
+                                    <>
+                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
+                                    </>
+                                  )}
+                                </>
+                              }
+                              arrow
+                              placement="top"
                             >
-                              {getPlanetAbbr(planet)}
-                            </Box>
+                              <Box
+                                sx={{
+                                  backgroundColor: bgColor,
+                                  color: textColor,
+                                  padding: '2px 4px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                  cursor: 'help',
+                                }}
+                              >
+                                {getPlanetAbbr(planet)}
+                              </Box>
+                            </Tooltip>
                           );
                         }
                         return null;
@@ -1625,21 +1820,38 @@ function CelebrityDetail() {
                         if (data.house === 6) {
                           const bgColor = getPlanetColor(planet);
                           const textColor = getTextColor(bgColor);
+                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
                           return (
-                            <Box
+                            <Tooltip
                               key={planet}
-                              sx={{
-                                backgroundColor: bgColor,
-                                color: textColor,
-                                padding: '2px 4px',
-                                borderRadius: '4px',
-                                fontSize: '0.8rem',
-                                fontWeight: 'bold',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                              }}
+                              title={
+                                <>
+                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
+                                  {nakDetail && (
+                                    <>
+                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
+                                    </>
+                                  )}
+                                </>
+                              }
+                              arrow
+                              placement="top"
                             >
-                              {getPlanetAbbr(planet)}
-                            </Box>
+                              <Box
+                                sx={{
+                                  backgroundColor: bgColor,
+                                  color: textColor,
+                                  padding: '2px 4px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                  cursor: 'help',
+                                }}
+                              >
+                                {getPlanetAbbr(planet)}
+                              </Box>
+                            </Tooltip>
                           );
                         }
                         return null;
@@ -1668,21 +1880,38 @@ function CelebrityDetail() {
                         if (data.house === 8) {
                           const bgColor = getPlanetColor(planet);
                           const textColor = getTextColor(bgColor);
+                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
                           return (
-                            <Box
+                            <Tooltip
                               key={planet}
-                              sx={{
-                                backgroundColor: bgColor,
-                                color: textColor,
-                                padding: '2px 4px',
-                                borderRadius: '4px',
-                                fontSize: '0.8rem',
-                                fontWeight: 'bold',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                              }}
+                              title={
+                                <>
+                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
+                                  {nakDetail && (
+                                    <>
+                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
+                                    </>
+                                  )}
+                                </>
+                              }
+                              arrow
+                              placement="top"
                             >
-                              {getPlanetAbbr(planet)}
-                            </Box>
+                              <Box
+                                sx={{
+                                  backgroundColor: bgColor,
+                                  color: textColor,
+                                  padding: '2px 4px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                  cursor: 'help',
+                                }}
+                              >
+                                {getPlanetAbbr(planet)}
+                              </Box>
+                            </Tooltip>
                           );
                         }
                         return null;
@@ -1774,6 +2003,11 @@ function CelebrityDetail() {
                             <Typography variant="body2" color="text.secondary">
                               Longitude {details.planetLongitude}° · In sign: {details.degreeInsideZodiac}° · In nakshatra: {details.degreeInsideNakshatra}°
                             </Typography>
+                            {getPlanetNakshatraPrediction(planetKey, details.nakshatra) && (
+                              <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic', color: 'text.secondary' }}>
+                                {getPlanetNakshatraPrediction(planetKey, details.nakshatra)}
+                              </Typography>
+                            )}
                           </Box>
                         </Paper>
                       </Grid>
@@ -2249,6 +2483,13 @@ function CelebrityDetail() {
                                 </Grid>
                               </>
                             )}
+                            {/* {getPlanetNakshatraPrediction(planet, nakshatraDetail?.nakshatra) && (
+                              <Grid item xs={12}>
+                                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                                  {getPlanetNakshatraPrediction(planet, nakshatraDetail?.nakshatra)}
+                                </Typography>
+                              </Grid>
+                            )} */}
                           </Grid>
                         </Paper>
                       </Grid>

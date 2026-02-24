@@ -14,6 +14,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { alpha } from '@mui/material/styles';
 import { planetInfo, houseInfo, zodiacSignInfo, planetInSignTraits, houseLordInHouseEffects, planetInHouseEffects, getZodiacSignColor, getZodiacSignAbbr } from '../data/astrologyData';
 import { nakshatraInfo, rulerToPlanetKey } from '../data/nakshatraData';
+import { planetInNakshatra } from '../data/planetInNakshatraData';
 
 // Helper function to get planet abbreviation
 const getPlanetAbbr = (planet) => {
@@ -180,6 +181,39 @@ function PlanetInfo() {
                             >
                               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, color: planetColor }}>
                                 {info.name.split(' ')[0]} in House {houseNum}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {text}
+                              </Typography>
+                            </Paper>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </Box>
+                  )}
+                  {/* Planet in Nakshatra Predictions */}
+                  {planetInNakshatra[planetKey] && (
+                    <Box sx={{ mb: 3, width: '100%' }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: planetColor }}>
+                        Planet in Nakshatra
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        How {info.name.split(' ')[0]} manifests in each of the 27 lunar mansions (nakshatras)
+                      </Typography>
+                      <Grid container spacing={1}>
+                        {Object.entries(planetInNakshatra[planetKey]).map(([nakshatra, text]) => (
+                          <Grid item xs={12} sm={6} md={4} key={nakshatra}>
+                            <Paper
+                              elevation={0}
+                              sx={{
+                                p: 1.5,
+                                border: `1px solid ${alpha(planetColor, 0.2)}`,
+                                borderRadius: 2,
+                                height: '100%',
+                              }}
+                            >
+                              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, color: planetColor }}>
+                                {info.name.split(' ')[0]} in {nakshatra}
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
                                 {text}
@@ -447,9 +481,9 @@ function PlanetInfo() {
             const textColor = getTextColor(nakshatraColor);
 
             return (
-              <Accordion 
-                key={nakshatra.number} 
-                sx={{ 
+              <Accordion
+                key={nakshatra.number}
+                sx={{
                   mb: 2,
                   boxShadow: `0 2px 8px ${alpha(nakshatraColor, 0.15)}`,
                   '&:hover': {
@@ -500,10 +534,10 @@ function PlanetInfo() {
                   <Grid container spacing={3}>
                     {/* Basic Information */}
                     <Grid item xs={12} md={6}>
-                      <Paper 
+                      <Paper
                         elevation={0}
-                        sx={{ 
-                          p: 2, 
+                        sx={{
+                          p: 2,
                           border: `1px solid ${alpha(nakshatraColor, 0.2)}`,
                           borderRadius: 2,
                           backgroundColor: alpha(nakshatraColor, 0.03),
@@ -522,16 +556,19 @@ function PlanetInfo() {
                           <Typography variant="body2">
                             <strong>Nature:</strong> {nakshatra.nature}
                           </Typography>
+                          <Typography variant="body2">
+                            <strong>Varna:</strong> {nakshatra.varna} · <strong>Gender:</strong> {nakshatra.gender}
+                          </Typography>
                         </Box>
                       </Paper>
                     </Grid>
 
                     {/* Table Attributes */}
                     <Grid item xs={12} md={6}>
-                      <Paper 
+                      <Paper
                         elevation={0}
-                        sx={{ 
-                          p: 2, 
+                        sx={{
+                          p: 2,
                           border: `1px solid ${alpha(nakshatraColor, 0.2)}`,
                           borderRadius: 2,
                           backgroundColor: alpha(nakshatraColor, 0.03),
@@ -558,12 +595,17 @@ function PlanetInfo() {
                           </Grid>
                           <Grid item xs={6}>
                             <Typography variant="body2">
-                              <strong>Varna:</strong> {nakshatra.varna}
+                              <strong>Movement:</strong> {nakshatra.movement}
                             </Typography>
                           </Grid>
                           <Grid item xs={6}>
                             <Typography variant="body2">
-                              <strong>Movement:</strong> {nakshatra.movement}
+                              <strong>Activity:</strong> {nakshatra.activity}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="body2">
+                              <strong>Dosha:</strong> {nakshatra.dosha}
                             </Typography>
                           </Grid>
                           <Grid item xs={6}>
@@ -587,10 +629,10 @@ function PlanetInfo() {
 
                     {/* Main Significations */}
                     <Grid item xs={12}>
-                      <Paper 
+                      <Paper
                         elevation={0}
-                        sx={{ 
-                          p: 2, 
+                        sx={{
+                          p: 2,
                           border: `1px solid ${alpha(nakshatraColor, 0.2)}`,
                           borderRadius: 2,
                           backgroundColor: alpha(nakshatraColor, 0.03),
@@ -624,10 +666,10 @@ function PlanetInfo() {
                     {/* Padas Information */}
                     {nakshatra.padas && nakshatra.padas.length > 0 && (
                       <Grid item xs={12}>
-                        <Paper 
+                        <Paper
                           elevation={0}
-                          sx={{ 
-                            p: 2, 
+                          sx={{
+                            p: 2,
                             border: `1px solid ${alpha(nakshatraColor, 0.2)}`,
                             borderRadius: 2,
                             backgroundColor: alpha(nakshatraColor, 0.03),
@@ -682,10 +724,10 @@ function PlanetInfo() {
                     <Grid item xs={12}>
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                         {nakshatra.summaryPoints && nakshatra.summaryPoints.length > 0 && (
-                          <Paper 
+                          <Paper
                             elevation={0}
-                            sx={{ 
-                              p: 2, 
+                            sx={{
+                              p: 2,
                               border: `1px solid ${alpha(nakshatraColor, 0.2)}`,
                               borderRadius: 2,
                               backgroundColor: alpha(nakshatraColor, 0.03),
@@ -703,10 +745,10 @@ function PlanetInfo() {
                             </Box>
                           </Paper>
                         )}
-                        <Paper 
+                        <Paper
                           elevation={0}
-                          sx={{ 
-                            p: 2, 
+                          sx={{
+                            p: 2,
                             border: `2px solid ${alpha(nakshatraColor, 0.3)}`,
                             borderRadius: 2,
                             backgroundColor: alpha(nakshatraColor, 0.05),
@@ -719,7 +761,7 @@ function PlanetInfo() {
                           <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
                             <strong style={{ color: nakshatraColor }}>Power Line:</strong> “{nakshatra.powerLinr}”
                           </Typography>
-                          
+
                         </Paper>
                       </Box>
                     </Grid>
@@ -1044,6 +1086,8 @@ function PlanetInfo() {
             );
           })}
         </Box>
+
+
       </Paper>
     </Container>
   );
