@@ -17,11 +17,16 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EditIcon from '@mui/icons-material/Edit';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import InfoIcon from '@mui/icons-material/Info';
 import { alpha } from '@mui/material/styles';
 import { EclipticGeoMoon, EclipticLongitude, Ecliptic, GeoVector, Body, SearchMoonNode, GeoMoon } from 'astronomy-engine';
 
@@ -754,6 +759,300 @@ const checkKendraTrikonRajyoga = (planets, ascendant) => {
   return uniqueYogas;
 };
 
+const PLANET_OWN_SIGNS = {
+  sun: ['Leo'],
+  moon: ['Cancer'],
+  mars: ['Aries', 'Scorpio'],
+  mercury: ['Gemini', 'Virgo'],
+  jupiter: ['Sagittarius', 'Pisces'],
+  venus: ['Taurus', 'Libra'],
+  saturn: ['Capricorn', 'Aquarius'],
+  rahu: [],
+  ketu: [],
+};
+
+const toPlanetKey = (name) => name.toLowerCase();
+const toPlanetLabel = (key) => key.charAt(0).toUpperCase() + key.slice(1);
+const isKendraHouse = (h) => [1, 4, 7, 10].includes(h);
+const isTrikonaHouse = (h) => [1, 5, 9].includes(h);
+const moonRelativeHouse = (moonHouse, offset) => ((moonHouse - 1 + offset) % 12) + 1;
+const isSeventhByHouse = (h1, h2) => ((h1 + 6 - 1) % 12) + 1 === h2;
+const getSignIndex = (sign) => zodiac.indexOf(sign);
+const getLongitudeFromSignDegree = (sign, degree) => getSignIndex(sign) * 30 + Number(degree || 0);
+const isBetweenArc = (startDeg, endDeg, pointDeg) => {
+  const arc = (endDeg - startDeg + 360) % 360;
+  const rel = (pointDeg - startDeg + 360) % 360;
+  return rel <= arc;
+};
+
+const analyzeYogasAndDoshas = (chart) => {
+  const planets = chart.planets;
+  const ascSign = chart.ascendant.sign;
+  const moonHouse = planets.moon?.house || 1;
+  const moonSign = planets.moon?.sign;
+
+  const houseLords = {};
+  for (let h = 1; h <= 12; h++) {
+    const sign = getSignForHouse(h, ascSign);
+    houseLords[h] = getLordOfSign(sign).toLowerCase();
+  }
+
+  const planetOwnedHouses = {};
+  Object.values(houseLords).forEach((p) => {
+    if (!planetOwnedHouses[p]) planetOwnedHouses[p] = [];
+  });
+  Object.entries(houseLords).forEach(([house, lord]) => {
+    if (!planetOwnedHouses[lord]) planetOwnedHouses[lord] = [];
+    planetOwnedHouses[lord].push(Number(house));
+  });
+
+  const rajaYogas = [];
+  const neechaBhangaYogas = [];
+  const panchaMahapurushaYogas = [];
+  const dhanaYogas = [];
+  const viparitaYogas = [];
+  const chandraYogas = [];
+  const buddhiYogas = [];
+  const adhiYogas = [];
+  const parivartanaYogas = [];
+  const doshas = [];
+
+  // 1) Kendra-Trikona Raja Yoga
+  const kendraLords = [1, 4, 7, 10].map((h) => ({ house: h, lord: houseLords[h] }));
+  const trikonaLords = [1, 5, 9].map((h) => ({ house: h, lord: houseLords[h] }));
+  const seenKT = new Set();
+  kendraLords.forEach((k) => {
+    trikonaLords.forEach((t) => {
+      if (k.lord === t.lord) return;
+      const p1 = planets[k.lord];
+      const p2 = planets[t.lord];
+      if (!p1 || !p2) return;
+      const conjunction = p1.sign === p2.sign;
+      const mutualAspect = isSeventhByHouse(p1.house, p2.house) && isSeventhByHouse(p2.house, p1.house);
+      const exchange =
+        PLANET_OWN_SIGNS[k.lord]?.includes(p2.sign) &&
+        PLANET_OWN_SIGNS[t.lord]?.includes(p1.sign);
+      if (conjunction || mutualAspect || exchange) {
+        const key = [k.lord, t.lord].sort().join('-');
+        if (!seenKT.has(key)) {
+          seenKT.add(key);
+          rajaYogas.push({
+            name: 'Kendra-Trikona Raja Yoga',
+            planets: [toPlanetLabel(k.lord), toPlanetLabel(t.lord)],
+            condition: conjunction ? 'Conjunction' : mutualAspect ? 'Mutual aspect (7th)' : 'Exchange (Parivartana)',
+            description: `${toPlanetLabel(k.lord)} (Kendra lord) connected with ${toPlanetLabel(t.lord)} (Trikona lord).`,
+          });
+        }
+      }
+    });
+  });
+
+  // 1b) Neecha Bhanga Raja Yoga
+  Object.entries(planets).forEach(([planetKey, data]) => {
+    const planetLabel = toPlanetLabel(planetKey);
+    if (!isDebilitated(planetLabel, data.sign)) return;
+    const dispositor = getSignLord(data.sign);
+    const dispositorData = planets[dispositor];
+    if (!dispositorData) return;
+    const moonKendras = [moonRelativeHouse(moonHouse, 0), moonRelativeHouse(moonHouse, 3), moonRelativeHouse(moonHouse, 6), moonRelativeHouse(moonHouse, 9)];
+    const conditions = [];
+    if (isKendraHouse(dispositorData.house) || moonKendras.includes(dispositorData.house)) {
+      conditions.push('Dispositor in Kendra from Lagna or Moon');
+    }
+    if (isExalted(dispositor, dispositorData.sign)) {
+      conditions.push('Dispositor exalted');
+    }
+    if (isSeventhByHouse(dispositorData.house, data.house)) {
+      conditions.push('Debilitated planet aspected by dispositor');
+    }
+    if (
+      PLANET_OWN_SIGNS[planetKey]?.includes(dispositorData.sign) &&
+      PLANET_OWN_SIGNS[dispositor]?.includes(data.sign)
+    ) {
+      conditions.push('Mutual exchange with dispositor');
+    }
+    const exaltedConj = Object.entries(planets).find(([other, otherData]) =>
+      other !== planetKey && otherData.sign === data.sign && isExalted(other, otherData.sign)
+    );
+    if (exaltedConj) {
+      conditions.push(`Conjunction with exalted ${toPlanetLabel(exaltedConj[0])}`);
+    }
+    if (conditions.length > 0) {
+      neechaBhangaYogas.push({
+        name: 'Neecha Bhanga Raja Yoga',
+        planet: planetLabel,
+        description: `${planetLabel} is debilitated in ${data.sign}, but cancellation is present.`,
+        conditions,
+      });
+    }
+  });
+
+  // 2) Pancha Mahapurusha (per provided rule set)
+  ['sun', 'moon', 'mars', 'mercury', 'jupiter', 'venus', 'saturn', 'rahu', 'ketu'].forEach((p) => {
+    const d = planets[p];
+    if (!d) return;
+    const own = PLANET_OWN_SIGNS[p]?.includes(d.sign);
+    const exalted = isExalted(p, d.sign);
+    if (own || exalted) {
+      const quality = (isKendraHouse(d.house) || isTrikonaHouse(d.house)) ? 'Excellent (Kendra/Trikona)' : 'Good (other house)';
+      panchaMahapurushaYogas.push({
+        planet: toPlanetLabel(p),
+        status: own ? 'Own sign' : 'Exaltation',
+        quality,
+        description: `${toPlanetLabel(p)} is in ${own ? 'own sign' : 'exaltation'} (${d.sign}).`,
+      });
+    }
+  });
+
+  // 3) Basic Dhana Yoga (1/2/11/5/9 lords)
+  const wealthLordKeys = [1, 2, 11, 5, 9].map((h) => houseLords[h]);
+  const wealthPairs = [];
+  for (let i = 0; i < wealthLordKeys.length; i++) {
+    for (let j = i + 1; j < wealthLordKeys.length; j++) {
+      const a = wealthLordKeys[i];
+      const b = wealthLordKeys[j];
+      if (!a || !b || a === b) continue;
+      const pa = planets[a];
+      const pb = planets[b];
+      if (!pa || !pb) continue;
+      const conjunction = pa.sign === pb.sign;
+      const mutualAspect = isSeventhByHouse(pa.house, pb.house) && isSeventhByHouse(pb.house, pa.house);
+      const exchange =
+        PLANET_OWN_SIGNS[a]?.includes(pb.sign) &&
+        PLANET_OWN_SIGNS[b]?.includes(pa.sign);
+      // const oneInOthersHouse =
+      //   PLANET_OWN_SIGNS[b]?.includes(pa.sign) ||
+      //   PLANET_OWN_SIGNS[a]?.includes(pb.sign);
+      if (conjunction || mutualAspect || exchange ) {
+        wealthPairs.push({
+          name: 'Basic Dhana Yoga',
+          planets: [toPlanetLabel(a), toPlanetLabel(b)],
+          description: `Connection between wealth lords via ${conjunction ? 'conjunction' : mutualAspect ? 'mutual aspect' : exchange ? 'exchange' : 'one in other\'s sign'}.`,
+        });
+      }
+    }
+  }
+  dhanaYogas.push(...wealthPairs);
+
+  // 4) Viparita Raja Yogas
+  const dusthana = [6, 8, 12];
+  if (dusthana.includes(planets[houseLords[6]]?.house)) {
+    viparitaYogas.push({ name: 'Harsha Yoga', description: `6th lord ${toPlanetLabel(houseLords[6])} is in house ${planets[houseLords[6]].house}.` });
+  }
+  if (dusthana.includes(planets[houseLords[8]]?.house)) {
+    viparitaYogas.push({ name: 'Sarala Yoga', description: `8th lord ${toPlanetLabel(houseLords[8])} is in house ${planets[houseLords[8]].house}.` });
+  }
+  if (dusthana.includes(planets[houseLords[12]]?.house)) {
+    viparitaYogas.push({ name: 'Vimala Yoga', description: `12th lord ${toPlanetLabel(houseLords[12])} is in house ${planets[houseLords[12]].house}.` });
+  }
+
+  // 5) Major Chandra Yogas
+  if ([moonRelativeHouse(moonHouse, 0), moonRelativeHouse(moonHouse, 3), moonRelativeHouse(moonHouse, 6), moonRelativeHouse(moonHouse, 9)].includes(planets.jupiter?.house)) {
+    chandraYogas.push({ name: 'Gajakesari Yoga', description: 'Jupiter is in Kendra from Moon.' });
+  }
+  if (planets.moon?.sign === planets.mars?.sign) {
+    chandraYogas.push({ name: 'Chandra-Mangala Yoga', description: 'Moon and Mars are conjunct.' });
+  }
+  const secondFromMoon = moonRelativeHouse(moonHouse, 1);
+  const twelfthFromMoon = moonRelativeHouse(moonHouse, 11);
+  const planets2nd = Object.entries(planets).filter(([p, d]) => p !== 'sun' && d.house === secondFromMoon);
+  const planets12th = Object.entries(planets).filter(([p, d]) => p !== 'sun' && d.house === twelfthFromMoon);
+  if (planets2nd.length > 0) {
+    chandraYogas.push({ name: 'Sunapha Yoga', description: `Planet(s) in 2nd from Moon: ${planets2nd.map(([p]) => toPlanetLabel(p)).join(', ')}.` });
+  }
+  if (planets12th.length > 0) {
+    chandraYogas.push({ name: 'Anapha Yoga', description: `Planet(s) in 12th from Moon: ${planets12th.map(([p]) => toPlanetLabel(p)).join(', ')}.` });
+  }
+  if (planets2nd.length > 0 && planets12th.length > 0) {
+    chandraYogas.push({ name: 'Durudhara Yoga', description: 'Planets are present on both sides of Moon (2nd and 12th).' });
+  }
+  const moonConjOthers = Object.entries(planets).filter(([p, d]) => p !== 'moon' && d.sign === moonSign);
+  if (planets2nd.length === 0 && planets12th.length === 0 && moonConjOthers.length === 0) {
+    const moonInKendra = isKendraHouse(moonHouse);
+    if (moonInKendra && moonConjOthers.length > 0) {
+      chandraYogas.push({ name: 'Kemadruma Yoga (Cancelled)', description: 'Kemadruma condition appears but cancellation applies (Moon in Kendra with planet).' });
+    } else {
+      doshas.push({ name: 'Kemadruma Yoga', description: 'No planets in 2nd/12th from Moon and no conjunction with Moon.' });
+    }
+  }
+
+  // 6) Buddhi Yoga
+  if (planets.sun?.sign === planets.mercury?.sign) {
+    buddhiYogas.push({ name: 'Budha-Aditya Yoga', description: 'Sun and Mercury are conjunct.' });
+  }
+
+  // 7) Adhi Yoga
+  const adhiHouses = [moonRelativeHouse(moonHouse, 5), moonRelativeHouse(moonHouse, 6), moonRelativeHouse(moonHouse, 7)];
+  const adhiPlanets = ['jupiter', 'venus', 'mercury'].filter((p) => adhiHouses.includes(planets[p]?.house));
+  if (adhiPlanets.length > 0) {
+    adhiYogas.push({
+      name: 'Adhi Yoga',
+      description: `Benefic(s) in 6th/7th/8th from Moon: ${adhiPlanets.map(toPlanetLabel).join(', ')}.`,
+    });
+  }
+
+  // 8) Parivartana Yoga
+  for (let i = 1; i <= 12; i++) {
+    for (let j = i + 1; j <= 12; j++) {
+      const lordI = houseLords[i];
+      const lordJ = houseLords[j];
+      if (!lordI || !lordJ || lordI === lordJ || !planets[lordI] || !planets[lordJ]) continue;
+      const signI = getSignForHouse(i, ascSign);
+      const signJ = getSignForHouse(j, ascSign);
+      const exchange = planets[lordI].sign === signJ && planets[lordJ].sign === signI;
+      if (!exchange) continue;
+
+      const owns = (p, houses) => (planetOwnedHouses[p] || []).some((h) => houses.includes(h));
+      const maha = owns(lordI, [1, 4, 5, 7, 9, 10]) && owns(lordJ, [1, 4, 5, 7, 9, 10]);
+      const dhan = owns(lordI, [2, 5, 9, 11]) && owns(lordJ, [2, 5, 9, 11]);
+      const khala = owns(lordI, [3, 6, 11]) && owns(lordJ, [3, 6, 11]);
+      const dainya = owns(lordI, [6, 8, 12]) && owns(lordJ, [6, 8, 12]);
+      const flags = [maha, dhan, khala, dainya].filter(Boolean).length;
+      const type = flags !== 1 ? 'Mixed/Normal' : maha ? 'Maha' : dhan ? 'Dhan' : khala ? 'Khala' : 'Dainya';
+
+      parivartanaYogas.push({
+        name: 'Parivartana Yoga',
+        type,
+        description: `Exchange between ${toPlanetLabel(lordI)} (house ${i}) and ${toPlanetLabel(lordJ)} (house ${j}).`,
+      });
+    }
+  }
+
+  // 9) Grahan Yoga
+  if (planets.sun?.sign === planets.rahu?.sign || planets.sun?.sign === planets.ketu?.sign) {
+    doshas.push({ name: 'Grahan Yoga (Sun)', description: 'Sun is conjunct Rahu or Ketu.' });
+  }
+  if (planets.moon?.sign === planets.rahu?.sign || planets.moon?.sign === planets.ketu?.sign) {
+    doshas.push({ name: 'Grahan Yoga (Moon)', description: 'Moon is conjunct Rahu or Ketu.' });
+  }
+
+  // 10) Kaal Sarp Yoga
+  if (planets.rahu && planets.ketu) {
+    const rahuLon = getLongitudeFromSignDegree(planets.rahu.sign, planets.rahu.degree);
+    const ketuLon = getLongitudeFromSignDegree(planets.ketu.sign, planets.ketu.degree);
+    const sevenPlanets = ['sun', 'moon', 'mars', 'mercury', 'jupiter', 'venus', 'saturn'];
+    const longs = sevenPlanets.map((p) => getLongitudeFromSignDegree(planets[p].sign, planets[p].degree));
+    const inRahuToKetu = longs.every((x) => isBetweenArc(rahuLon, ketuLon, x));
+    const inKetuToRahu = longs.every((x) => isBetweenArc(ketuLon, rahuLon, x));
+    if (inRahuToKetu || inKetuToRahu) {
+      doshas.push({ name: 'Kaal Sarp Yoga', description: 'All 7 planets lie on one side of the Rahu-Ketu axis.' });
+    }
+  }
+
+  return {
+    rajaYogas,
+    neechaBhangaYogas,
+    panchaMahapurushaYogas,
+    dhanaYogas,
+    viparitaYogas,
+    chandraYogas,
+    buddhiYogas,
+    adhiYogas,
+    parivartanaYogas,
+    doshas,
+  };
+};
+
 const nakshatras = [
   "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra",
   "Punarvasu", "Pushya", "Ashlesha", "Magha", "PurvaPhalguni",
@@ -810,12 +1109,20 @@ function calculateMahadasha(birthDate, nakshatra, degreeInsideNakshatra) {
 
   let remainingYears = startYears * remainingFraction;
 
+  const startYearsFraction = remainingYears - Math.floor(remainingYears);
+  let startMonthsFraction = startYearsFraction * 12;
+  startMonthsFraction = Math.floor(startMonthsFraction) + 1;
+
+  let monthFraction = new Date(birthDate).getMonth() + 1 + startMonthsFraction % 12;
+  console.log('month fraction', monthFraction, startMonthsFraction, remainingYears, startYearsFraction);
+
+
   const results = [];
 
   let currentDate = new Date(birthDate);
 
   // first dasha (partial)
-  currentDate.setFullYear(currentDate.getFullYear() + remainingYears);
+  currentDate.setFullYear(currentDate.getFullYear() + Math.floor(remainingYears), monthFraction);
 
   results.push({
     planet: startLord,
@@ -838,11 +1145,39 @@ function calculateMahadasha(birthDate, nakshatra, degreeInsideNakshatra) {
       end: new Date(currentDate)
     });
   }
-  console.log('results of dasha', results);
-
-
   return results;
 }
+
+/**
+ * Compute 9 Antardashas (Bhuktis) within a Maha Dasha.
+ * Sequence starts from the Maha Dasha planet and follows dasha order.
+ * Duration is proportional: (planetYears / 120) * mahadashaDurationYears
+ */
+function calculateAntardashas(mahaDashaStart, mahaDashaEnd, mahaDashaPlanet) {
+  const msPerYear = 365.25 * 24 * 60 * 60 * 1000;
+  const mahaDurationYears = (mahaDashaEnd.getTime() - mahaDashaStart.getTime()) / msPerYear;
+
+  const antardashas = [];
+  let idx = dashaOrder.indexOf(mahaDashaPlanet);
+  let currentDate = new Date(mahaDashaStart);
+
+  for (let i = 0; i < dashaOrder.length; i++) {
+    const planet = dashaOrder[idx];
+    const durationYears = (dashaYears[planet] / 120) * mahaDurationYears;
+    const endDate = new Date(currentDate.getTime() + durationYears * msPerYear);
+
+    antardashas.push({
+      planet,
+      start: new Date(currentDate),
+      end: endDate,
+      durationYears,
+    });
+    currentDate = endDate;
+    idx = (idx + 1) % dashaOrder.length;
+  }
+  return antardashas;
+}
+
 function lahiriAyanamsa(date) {
   const year = date.getUTCFullYear() + (date.getUTCMonth() + 1) / 12;
   return (year - 285) * 50.290966 / 3600;
@@ -908,9 +1243,6 @@ function CelebrityDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [celebrity, setCelebrity] = useState(null);
-  const [wealthYogas, setWealthYogas] = useState([]);
-  const [neechaYogas, setNeechaYogas] = useState([]);
-  const [kendraTrikonYogas, setKendraTrikonYogas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -924,26 +1256,6 @@ function CelebrityDetail() {
       const data = response.data;
       if (data) {
         setCelebrity(data);
-        // Calculate Wealth Yogas
-        const wealthYogasList = checkWealthYogas(data.planets, data.ascendant);
-        setWealthYogas(wealthYogasList);
-        // Calculate Neecha Yogas
-        const neechaYogasList = Object.entries(data.planets)
-          .map(([planet, planetData]) => {
-            const yoga = checkNeechaYoga(planet, planetData.sign, data.planets);
-            if (yoga) {
-              return {
-                planet: planet.charAt(0).toUpperCase() + planet.slice(1),
-                ...yoga
-              };
-            }
-            return null;
-          })
-          .filter(Boolean);
-        setNeechaYogas(neechaYogasList);
-        // Calculate Kendra Trikon Yogas
-        const kendraTrikonYogasList = checkKendraTrikonRajyoga(data.planets, data.ascendant);
-        setKendraTrikonYogas(kendraTrikonYogasList);
       }
       setLoading(false);
     } catch (err) {
@@ -1006,23 +1318,7 @@ function CelebrityDetail() {
     }
   }
 
-  // Calculate Pancha Mahapurusha Yogas
-  const panchaMahapurushaYogas = Object.entries(celebrity.planets)
-    .filter(([planet]) => ['sun', 'moon', 'mars', 'mercury', 'jupiter', 'venus', 'saturn', 'rahu', 'ketu'].includes(planet.toLowerCase()))
-    .map(([planet, data]) => {
-      const yoga = checkPanchaMahapurushaYoga(planet, data.sign);
-      if (yoga) {
-        return {
-          planet: planet.charAt(0).toUpperCase() + planet.slice(1),
-          ...yoga
-        };
-      }
-      return null;
-    })
-    .filter(Boolean);
-
-  // Calculate Vipreet Rajyoga
-  const vipreetYogas = checkVipreetRajyoga(celebrity.planets, celebrity.ascendant.sign);
+  const yogaAnalysis = analyzeYogasAndDoshas(celebrity);
 
   //Calculate Moon Nakshtra Details
 
@@ -1127,7 +1423,7 @@ function CelebrityDetail() {
               Category
             </Typography>
             <Typography variant="body1">
-              {celebrity.category} 
+              {celebrity.category}
             </Typography>
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -2018,7 +2314,7 @@ function CelebrityDetail() {
             </Accordion>
           </Grid>
 
-          {/* Maha Dasha Section - Expandable */}
+          {/* Maha Dasha & Antardasha Timeline Section - Expandable */}
           <Grid item xs={12}>
             <Accordion
               defaultExpanded={false}
@@ -2031,11 +2327,14 @@ function CelebrityDetail() {
             >
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  Maha Dasha Timeline
+                  Maha Dasha & Antardasha Timeline
                 </Typography>
                 <Chip label="Vimshottari" size="small" sx={{ ml: 1 }} variant="outlined" />
               </AccordionSummary>
               <AccordionDetails sx={{ pt: 0 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Each Maha Dasha contains 9 Antardashas (Bhuktis) in sequence starting from the Maha Dasha planet. Antardasha duration = (Planet years / 120) × Maha Dasha length.
+                </Typography>
                 <Grid container spacing={2}>
                   {mahaDashaPeriods.map((mahaDasha, idx) => {
                     const planetKey = mahaDasha.planet.toLowerCase();
@@ -2044,48 +2343,154 @@ function CelebrityDetail() {
                     const startDate = idx === 0
                       ? new Date(`${celebrity.birthDate.split("T")[0]}T${celebrity.birthTime}:00${celebrity.timeZone}`)
                       : mahaDashaPeriods[idx - 1].end;
+                    const antardashas = calculateAntardashas(startDate, mahaDasha.end, mahaDasha.planet);
+                    const totalYears = ((mahaDasha.end.getTime() - startDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000)).toFixed(1);
                     return (
-                      <Grid item xs={12} sm={6} md={4} key={`${mahaDasha.planet}-${idx}`}>
-                        <Paper
+                      <Grid item xs={12} key={`${mahaDasha.planet}-${idx}`}>
+                        <Accordion
                           elevation={0}
                           sx={{
-                            p: 2,
-                            height: '100%',
-                            borderLeft: `4px solid ${planetColor}`,
-                            borderRadius: 2,
-                            backgroundColor: alpha(planetColor, 0.06),
-                            transition: 'box-shadow 0.2s ease',
-                            '&:hover': { boxShadow: `0 4px 12px ${alpha(planetColor, 0.2)}` },
+                            border: `2px solid ${alpha(planetColor, 0.4)}`,
+                            borderRadius: '12px !important',
+                            '&:before': { display: 'none' },
+                            backgroundColor: alpha(planetColor, 0.05),
+                            '& .MuiAccordionSummary-root': { minHeight: 64 },
                           }}
                         >
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
-                            <Box
-                              sx={{
-                                width: 40,
-                                height: 40,
-                                borderRadius: '50%',
-                                backgroundColor: planetColor,
-                                color: textColor,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontWeight: 'bold',
-                                fontSize: '0.85rem',
-                              }}
-                            >
-                              {getPlanetAbbr(planetKey)}
+                          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                              <Box
+                                sx={{
+                                  width: 44,
+                                  height: 44,
+                                  borderRadius: '50%',
+                                  backgroundColor: planetColor,
+                                  color: textColor,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontWeight: 'bold',
+                                  fontSize: '0.9rem',
+                                }}
+                              >
+                                {getPlanetAbbr(planetKey)}
+                              </Box>
+                              <Box>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: planetColor }}>
+                                  {mahaDasha.planet} Mahadasha
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  {startDate.toLocaleDateString(undefined, { dateStyle: 'medium' })} — {mahaDasha.end.toLocaleDateString(undefined, { dateStyle: 'medium' })} · {totalYears} years
+                                </Typography>
+                              </Box>
+                              <Chip label="9 Antardashas" size="small" variant="outlined" sx={{ ml: 1 }} />
                             </Box>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: planetColor }}>
-                              {mahaDasha.planet} Mahadasha
-                            </Typography>
-                          </Box>
-                          <Typography variant="body2" color="text.secondary">
-                            <strong>Start:</strong> {startDate.toLocaleDateString(undefined, { dateStyle: 'medium' })}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            <strong>End:</strong> {mahaDasha.end.toLocaleDateString(undefined, { dateStyle: 'medium' })}
-                          </Typography>
-                        </Paper>
+                          </AccordionSummary>
+                          <AccordionDetails sx={{ pt: 0, pb: 2 }}>
+                            {/* Antardasha visual bar */}
+                            <Box sx={{ mb: 2 }}>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                Antardasha proportions
+                              </Typography>
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  height: 24,
+                                  borderRadius: 1,
+                                  overflow: 'hidden',
+                                  border: (theme) => `1px solid ${theme.palette.divider}`,
+                                }}
+                              >
+                                {antardashas.map((ad, adIdx) => {
+                                  const pct = (ad.durationYears / parseFloat(totalYears)) * 100;
+                                  const adColor = getPlanetColor(ad.planet.toLowerCase());
+                                  const adTextColor = getTextColor(adColor);
+                                  return (
+                                    <Tooltip
+                                      key={adIdx}
+                                      title={`${ad.planet}: ${ad.start.toLocaleDateString()} — ${ad.end.toLocaleDateString()} (${ad.durationYears.toFixed(2)} yrs)`}
+                                      arrow
+                                      placement="top"
+                                    >
+                                      <Box
+                                        sx={{
+                                          flex: `0 0 ${pct}%`,
+                                          minWidth: 2,
+                                          backgroundColor: adColor,
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          cursor: 'help',
+                                          '&:hover': { filter: 'brightness(1.1)' },
+                                        }}
+                                      >
+                                        {pct > 8 && (
+                                          <Typography variant="caption" sx={{ color: adTextColor, fontWeight: 600, fontSize: '0.65rem' }}>
+                                            {getPlanetAbbr(ad.planet.toLowerCase())}
+                                          </Typography>
+                                        )}
+                                      </Box>
+                                    </Tooltip>
+                                  );
+                                })}
+                              </Box>
+                            </Box>
+                            {/* Antardasha table */}
+                            <TableContainer component={Paper} elevation={0} sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
+                              <Table size="small">
+                                <TableHead>
+                                  <TableRow sx={{ backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)' }}>
+                                    <TableCell sx={{ fontWeight: 600 }}>Antardasha</TableCell>
+                                    <TableCell sx={{ fontWeight: 600 }}>Start</TableCell>
+                                    <TableCell sx={{ fontWeight: 600 }}>End</TableCell>
+                                    <TableCell sx={{ fontWeight: 600 }} align="right">Duration</TableCell>
+                                  </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                  {antardashas.map((ad, adIdx) => {
+                                    const adColor = getPlanetColor(ad.planet.toLowerCase());
+                                    const adTextColor = getTextColor(adColor);
+                                    return (
+                                      <TableRow key={adIdx} sx={{ '&:hover': { backgroundColor: (theme) => alpha(adColor, 0.08) } }}>
+                                        <TableCell>
+                                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Box
+                                              sx={{
+                                                width: 28,
+                                                height: 28,
+                                                borderRadius: '50%',
+                                                backgroundColor: adColor,
+                                                color: adTextColor,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                fontWeight: 'bold',
+                                                fontSize: '0.7rem',
+                                              }}
+                                            >
+                                              {getPlanetAbbr(ad.planet.toLowerCase())}
+                                            </Box>
+                                            {ad.planet}
+                                          </Box>
+                                        </TableCell>
+                                        <TableCell>{ad.start.toLocaleDateString(undefined, { dateStyle: 'medium' })}</TableCell>
+                                        <TableCell>{ad.end.toLocaleDateString(undefined, { dateStyle: 'medium' })}</TableCell>
+                                        <TableCell align="right">
+                                          <Chip
+                                            label={`${ad.durationYears.toFixed(2)} yrs`}
+                                            size="small"
+                                            variant="outlined"
+                                            sx={{ fontSize: '0.75rem' }}
+                                          />
+                                        </TableCell>
+                                      </TableRow>
+                                    );
+                                  })}
+                                </TableBody>
+                              </Table>
+                            </TableContainer>
+                          </AccordionDetails>
+                        </Accordion>
                       </Grid>
                     );
                   })}
@@ -2097,7 +2502,7 @@ function CelebrityDetail() {
 
 
 
-          {/* Yogas and Doshas Section - Expandable */}
+          {/* Yogas and Doshas Section - As per yoga.txt */}
           <Grid item xs={12}>
             <Accordion
               defaultExpanded={false}
@@ -2110,291 +2515,106 @@ function CelebrityDetail() {
             >
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  Yogas and Dashas
+                  Yogas and Doshas
                 </Typography>
                 <Chip
-                  label={`${(panchaMahapurushaYogas?.length || 0) + (neechaYogas?.length || 0) + (kendraTrikonYogas?.length || 0) + (wealthYogas?.length || 0) + (vipreetYogas?.length || 0)} yogas`}
+                  label={`${yogaAnalysis.rajaYogas.length +
+                    yogaAnalysis.neechaBhangaYogas.length +
+                    yogaAnalysis.panchaMahapurushaYogas.length +
+                    yogaAnalysis.dhanaYogas.length +
+                    yogaAnalysis.viparitaYogas.length +
+                    yogaAnalysis.chandraYogas.length +
+                    yogaAnalysis.buddhiYogas.length +
+                    yogaAnalysis.adhiYogas.length +
+                    yogaAnalysis.parivartanaYogas.length +
+                    yogaAnalysis.doshas.length
+                    } findings`}
                   size="small"
                   sx={{ ml: 1 }}
                   variant="outlined"
                 />
               </AccordionSummary>
               <AccordionDetails sx={{ pt: 0 }}>
-                {/* Pancha Mahapurusha Rajyoga */}
-                <Grid item xs={12}>
-                  <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
-                    <Typography variant="subtitle1" gutterBottom>
-                      Pancha Mahapurusha Rajyoga
-                    </Typography>
-
-                    {panchaMahapurushaYogas.length > 0 ? (
-                      <Grid container spacing={2}>
-                        {panchaMahapurushaYogas.map((yoga, index) => (
-                          <Grid item xs={12} sm={6} md={4} key={index}>
-                            <Paper
-                              elevation={0}
-                              sx={{
-                                p: 2,
-                                height: '100%',
-                                border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                                borderRadius: 2,
-                                backgroundColor: (theme) => theme.palette.background.paper,
-                              }}
-                            >
-                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 600, mr: 1 }}>
-                                  {yoga.planet}
-                                </Typography>
-                                <Chip
-                                  label={yoga.yogaName}
-                                  size="small"
-                                  color="primary"
-                                  variant="outlined"
-                                  sx={{ mr: 1 }}
-                                />
-                                <Chip
-                                  label={yoga.type}
-                                  size="small"
-                                  color="secondary"
-                                  variant="outlined"
-                                />
-                              </Box>
-                              <Typography variant="body2" color="text.secondary">
-                                {yoga.description}
-                              </Typography>
-                            </Paper>
+                <Grid container spacing={2}>
+                  {[
+                    { title: '1. Raja Yogas', items: yogaAnalysis.rajaYogas, color: 'success', descKey: 'description' },
+                    { title: '1. Neecha Bhanga Raja Yoga', items: yogaAnalysis.neechaBhangaYogas, color: 'success', descKey: 'description' },
+                    { title: '2. Pancha Mahapurusha Yogas', items: yogaAnalysis.panchaMahapurushaYogas, color: 'primary', descKey: 'description' },
+                    { title: '3. Dhana Yogas', items: yogaAnalysis.dhanaYogas, color: 'success', descKey: 'description' },
+                    { title: '4. Viparita Raja Yogas', items: yogaAnalysis.viparitaYogas, color: 'warning', descKey: 'description' },
+                    { title: '5. Major Chandra Yogas', items: yogaAnalysis.chandraYogas, color: 'info', descKey: 'description' },
+                    { title: '6. Buddhi Yogas', items: yogaAnalysis.buddhiYogas, color: 'secondary', descKey: 'description' },
+                    { title: '7. Adhi Yoga', items: yogaAnalysis.adhiYogas, color: 'info', descKey: 'description' },
+                    { title: '8. Parivartana Yogas', items: yogaAnalysis.parivartanaYogas, color: 'primary', descKey: 'description' },
+                    { title: '9 & 10. Doshas (Grahan / Kaal Sarp / Kemadruma)', items: yogaAnalysis.doshas, color: 'error', descKey: 'description' },
+                  ].map((section) => (
+                    <Grid item xs={12} key={section.title}>
+                      <Paper elevation={0} sx={{ p: 2, border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.2)}` }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                            {section.title}
+                          </Typography>
+                          <Chip size="small" variant="outlined" color={section.color} label={`${section.items.length} found`} />
+                        </Box>
+                        {section.items.length === 0 ? (
+                          <Typography variant="body2" color="text.secondary">
+                            No combinations found for this section.
+                          </Typography>
+                        ) : (
+                          <Grid container spacing={2}>
+                            {section.items.map((item, idx) => (
+                              <Grid item xs={12} sm={6} md={4} key={`${section.title}-${idx}`}>
+                                <Paper
+                                  elevation={0}
+                                  sx={{
+                                    p: 2,
+                                    height: '100%',
+                                    border: (theme) => `1px solid ${alpha(theme.palette[section.color].main, 0.25)}`,
+                                    backgroundColor: (theme) => alpha(theme.palette[section.color].main, 0.05),
+                                  }}
+                                >
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                      {item.name || item.type || 'Yoga'}
+                                    </Typography>
+                                    {item.type && <Chip size="small" variant="outlined" label={item.type} color={section.color} />}
+                                  </Box>
+                                  {item.planets && (
+                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                      Planets: {item.planets.join(', ')}
+                                    </Typography>
+                                  )}
+                                  {item.planet && (
+                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                      Planet: {item.planet}
+                                    </Typography>
+                                  )}
+                                  {item.condition && (
+                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                      Condition: {item.condition}
+                                    </Typography>
+                                  )}
+                                  <Typography variant="body2" color="text.secondary">
+                                    {item[section.descKey]}
+                                  </Typography>
+                                  {item.conditions?.length > 0 && (
+                                    <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
+                                      {item.conditions.map((c, cIdx) => (
+                                        <li key={cIdx}>
+                                          <Typography variant="caption" color="text.secondary">{c}</Typography>
+                                        </li>
+                                      ))}
+                                    </Box>
+                                  )}
+                                </Paper>
+                              </Grid>
+                            ))}
                           </Grid>
-                        ))}
-                      </Grid>
-                    ) : (
-                      <Typography variant="body1" color="text.secondary">
-                        No Pancha Mahapurusha Yogas are present in this chart.
-                      </Typography>
-                    )}
-                  </Paper>
+                        )}
+                      </Paper>
+                    </Grid>
+                  ))}
                 </Grid>
-
-                {/* Neecha Yoga */}
-                <Grid item xs={12}>
-                  <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
-                    <Typography variant="subtitle1" gutterBottom>
-                      Neecha (Debilitation) Yoga
-                    </Typography>
-
-                    {neechaYogas.length > 0 ? (
-                      <Grid container spacing={2}>
-                        {neechaYogas.map((yoga, index) => (
-                          <Grid item xs={12} sm={6} md={4} key={index}>
-                            <Paper
-                              elevation={0}
-                              sx={{
-                                p: 2,
-                                height: '100%',
-                                border: (theme) => `1px solid ${alpha(
-                                  yoga.isDebilitationBroken ? theme.palette.warning.main : theme.palette.error.main,
-                                  0.1
-                                )}`,
-                                borderRadius: 2,
-                                backgroundColor: (theme) => theme.palette.background.paper,
-                              }}
-                            >
-                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 600, mr: 1 }}>
-                                  {yoga.planet}
-                                </Typography>
-                                <Chip
-                                  label={yoga.type}
-                                  size="small"
-                                  color={yoga.isDebilitationBroken ? "warning" : "error"}
-                                  variant="outlined"
-                                />
-                              </Box>
-                              <Typography variant="body2" color="text.secondary">
-                                {yoga.description}
-                              </Typography>
-                            </Paper>
-                          </Grid>
-                        ))}
-                      </Grid>
-                    ) : (
-                      <Typography variant="body1" color="text.secondary">
-                        No Neecha Yogas are present in this chart.
-                      </Typography>
-                    )}
-                  </Paper>
-                </Grid>
-
-                {/* Kendra Trikon Rajyoga */}
-                <Grid item xs={12}>
-                  <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
-                    <Typography variant="subtitle1" gutterBottom>
-                      Kendra Trikon Rajyoga
-                    </Typography>
-
-                    {kendraTrikonYogas.length > 0 ? (
-                      <Grid container spacing={2}>
-                        {kendraTrikonYogas.map((yoga, index) => (
-                          <Grid item xs={12} sm={6} md={4} key={index}>
-                            <Paper
-                              elevation={0}
-                              sx={{
-                                p: 2,
-                                height: '100%',
-                                border: (theme) => `1px solid ${alpha(theme.palette.success.main, 0.1)}`,
-                                borderRadius: 2,
-                                backgroundColor: (theme) => theme.palette.background.paper,
-                              }}
-                            >
-                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 600, mr: 1 }}>
-                                  {yoga.planets.join(', ')}
-                                </Typography>
-                                <Chip
-                                  label={yoga.type}
-                                  size="small"
-                                  color="success"
-                                  variant="outlined"
-                                />
-                              </Box>
-                              <Typography variant="body2" color="text.secondary">
-                                {yoga.description}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                                Houses involved: {yoga.houses.join(', ')}
-                              </Typography>
-                            </Paper>
-                          </Grid>
-                        ))}
-                      </Grid>
-                    ) : (
-                      <Typography variant="body1" color="text.secondary">
-                        No Kendra Trikon Rajyogas are present in this chart.
-                      </Typography>
-                    )}
-                  </Paper>
-                </Grid>
-
-                {/* Wealth Yogas */}
-                <Grid item xs={12}>
-                  <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
-                    <Typography variant="subtitle1" gutterBottom>
-                      Wealth Yogas
-                    </Typography>
-
-                    {wealthYogas.length > 0 ? (
-                      <Grid container spacing={2}>
-                        {wealthYogas.map((yoga, index) => (
-                          <Grid item xs={12} sm={6} md={4} key={index}>
-                            <Paper
-                              elevation={0}
-                              sx={{
-                                p: 2,
-                                height: '100%',
-                                border: (theme) => `1px solid ${alpha(theme.palette.success.main, 0.1)}`,
-                                borderRadius: 2,
-                                backgroundColor: (theme) => theme.palette.background.paper,
-                              }}
-                            >
-                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 600, mr: 1 }}>
-                                  {yoga.name}
-                                </Typography>
-                                <Chip
-                                  label={yoga.type}
-                                  size="small"
-                                  color="success"
-                                  variant="outlined"
-                                  sx={{ mr: 1 }}
-                                />
-                                <Chip
-                                  label={yoga.planets.join('-')}
-                                  size="small"
-                                  color="success"
-                                  variant="outlined"
-                                />
-                              </Box>
-                              <Typography variant="body2" color="text.secondary">
-                                {yoga.description}
-                              </Typography>
-                            </Paper>
-                          </Grid>
-                        ))}
-                      </Grid>
-                    ) : (
-                      <Typography variant="body1" color="text.secondary">
-                        No Wealth Yogas are present in this chart.
-                      </Typography>
-                    )}
-                  </Paper>
-                </Grid>
-
-                {/* Vipreet Rajyoga */}
-                <Grid item xs={12}>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 3,
-                      mb: 3,
-                      backgroundColor: (theme) => alpha(theme.palette.warning.main, 0.05),
-                      borderRadius: 2,
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <Typography variant="h6" sx={{ mr: 1 }}>
-                        Vipreet Rajyoga
-                      </Typography>
-                      <Tooltip title="Vipreet Rajyoga is formed when lords of 6th, 8th, or 12th houses are placed in dusthana houses (6th, 8th, or 12th). These yogas indicate success through overcoming challenges and transforming difficulties into opportunities.">
-                        <InfoIcon color="action" fontSize="small" />
-                      </Tooltip>
-                    </Box>
-
-                    {vipreetYogas.length > 0 ? (
-                      <Grid container spacing={2}>
-                        {vipreetYogas.map((yoga, index) => (
-                          <Grid item xs={12} sm={6} md={4} key={index}>
-                            <Paper
-                              elevation={0}
-                              sx={{
-                                p: 2,
-                                height: '100%',
-                                border: (theme) => `1px solid ${alpha(theme.palette.warning.main, 0.1)}`,
-                                borderRadius: 2,
-                                backgroundColor: (theme) => theme.palette.background.paper,
-                              }}
-                            >
-                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 600, mr: 1 }}>
-                                  {yoga.planet}
-                                </Typography>
-                                <Chip
-                                  label={yoga.type}
-                                  size="small"
-                                  color="warning"
-                                  variant="outlined"
-                                  sx={{ mr: 1 }}
-                                />
-                                <Chip
-                                  label={`House ${yoga.house}`}
-                                  size="small"
-                                  color="warning"
-                                  variant="outlined"
-                                />
-                              </Box>
-                              <Typography variant="body2" color="text.secondary">
-                                {yoga.description}
-                              </Typography>
-                            </Paper>
-                          </Grid>
-                        ))}
-                      </Grid>
-                    ) : (
-                      <Typography variant="body1" color="text.secondary">
-                        No Vipreet Rajyoga is present in this chart.
-                      </Typography>
-                    )}
-                  </Paper>
-                </Grid>
-
               </AccordionDetails>
             </Accordion>
           </Grid>

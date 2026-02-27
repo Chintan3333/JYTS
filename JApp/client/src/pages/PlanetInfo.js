@@ -131,99 +131,7 @@ function PlanetInfo() {
                   </Box>
                 </AccordionSummary>
                 <AccordionDetails>
-                  {/* Planet in Sign Personality Traits */}
-                  {planetInSignTraits[planetKey] && (
-                    <Box sx={{ mb: 3, width: '100%' }}>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: planetColor }}>
-                        Personality Traits by Sign
-                      </Typography>
-                      <Grid container spacing={1}>
-                        {Object.entries(planetInSignTraits[planetKey]).map(([sign, trait]) => (
-                          <Grid item xs={12} sm={6} md={4} key={sign}>
-                            <Paper
-                              elevation={0}
-                              sx={{
-                                p: 1.5,
-                                border: `1px solid ${alpha(planetColor, 0.2)}`,
-                                borderRadius: 2,
-                                height: '100%',
-                              }}
-                            >
-                              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, color: planetColor }}>
-                                {info.name.split(' ')[0]} in {sign}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                {trait}
-                              </Typography>
-                            </Paper>
-                          </Grid>
-                        ))}
-                      </Grid>
-                    </Box>
-                  )}
-                  {/* Planet in House Effects */}
-                  {planetInHouseEffects[planetKey] && (
-                    <Box sx={{ mb: 3, width: '100%' }}>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: planetColor }}>
-                        Planet in House Effects
-                      </Typography>
-                      <Grid container spacing={1}>
-                        {Object.entries(planetInHouseEffects[planetKey]).map(([houseNum, text]) => (
-                          <Grid item xs={12} sm={6} md={4} key={houseNum}>
-                            <Paper
-                              elevation={0}
-                              sx={{
-                                p: 1.5,
-                                border: `1px solid ${alpha(planetColor, 0.2)}`,
-                                borderRadius: 2,
-                                height: '100%',
-                              }}
-                            >
-                              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, color: planetColor }}>
-                                {info.name.split(' ')[0]} in House {houseNum}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                {text}
-                              </Typography>
-                            </Paper>
-                          </Grid>
-                        ))}
-                      </Grid>
-                    </Box>
-                  )}
-                  {/* Planet in Nakshatra Predictions */}
-                  {planetInNakshatra[planetKey] && (
-                    <Box sx={{ mb: 3, width: '100%' }}>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: planetColor }}>
-                        Planet in Nakshatra
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        How {info.name.split(' ')[0]} manifests in each of the 27 lunar mansions (nakshatras)
-                      </Typography>
-                      <Grid container spacing={1}>
-                        {Object.entries(planetInNakshatra[planetKey]).map(([nakshatra, text]) => (
-                          <Grid item xs={12} sm={6} md={4} key={nakshatra}>
-                            <Paper
-                              elevation={0}
-                              sx={{
-                                p: 1.5,
-                                border: `1px solid ${alpha(planetColor, 0.2)}`,
-                                borderRadius: 2,
-                                height: '100%',
-                              }}
-                            >
-                              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, color: planetColor }}>
-                                {info.name.split(' ')[0]} in {nakshatra}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                {text}
-                              </Typography>
-                            </Paper>
-                          </Grid>
-                        ))}
-                      </Grid>
-                    </Box>
-                  )}
+
                   <Grid container spacing={3}>
                     {/* Main Subjects */}
                     <Grid item xs={12} md={8}>
@@ -1081,6 +989,282 @@ function PlanetInfo() {
                       </Paper>
                     </Grid>
                   </Grid>
+                </AccordionDetails>
+              </Accordion>
+            );
+          })}
+        </Box>
+
+        <Divider sx={{ my: 6 }} />
+
+
+        <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 1 }}>
+          Planet Information (In Zodiac Sign)
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+          Detailed information about each planet in each zodiac sign in Vedic astrology (Jyotiṣa)
+        </Typography>
+
+        <Box>
+          {Object.entries(planetInfo).map(([planetKey, info]) => {
+            const planetColor = getPlanetColor(planetKey);
+            const textColor = getTextColor(planetColor);
+
+            return (
+              <Accordion key={planetKey} sx={{ mb: 2 }}>
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{
+                    backgroundColor: alpha(planetColor, 0.1),
+                    '&:hover': {
+                      backgroundColor: alpha(planetColor, 0.15),
+                    },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                    <Box
+                      sx={{
+                        backgroundColor: planetColor,
+                        color: textColor,
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 'bold',
+                        fontSize: '0.9rem',
+                      }}
+                    >
+                      {getPlanetAbbr(planetKey)}
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        {info.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {info.description}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </AccordionSummary>
+                <AccordionDetails>
+                  {/* Planet in Sign Personality Traits */}
+                  {planetInSignTraits[planetKey] && (
+                    <Box sx={{ mb: 3, width: '100%' }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: planetColor }}>
+                        Personality Traits by Sign
+                      </Typography>
+                      <Grid container spacing={1}>
+                        {Object.entries(planetInSignTraits[planetKey]).map(([sign, trait]) => (
+                          <Grid item xs={12} sm={6} md={4} key={sign}>
+                            <Paper
+                              elevation={0}
+                              sx={{
+                                p: 1.5,
+                                border: `1px solid ${alpha(planetColor, 0.2)}`,
+                                borderRadius: 2,
+                                height: '100%',
+                              }}
+                            >
+                              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, color: planetColor }}>
+                                {info.name.split(' ')[0]} in {sign}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {trait}
+                              </Typography>
+                            </Paper>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </Box>
+                  )}
+                </AccordionDetails>
+              </Accordion>
+            );
+          })}
+        </Box>
+
+
+        <Divider sx={{ my: 6 }} />
+
+
+        <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 1 }}>
+          Planet Information (In Houses 1-12)
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+          Detailed information about each planet in each house in Vedic astrology (Jyotiṣa)
+        </Typography>
+
+        <Box>
+          {Object.entries(planetInfo).map(([planetKey, info]) => {
+            const planetColor = getPlanetColor(planetKey);
+            const textColor = getTextColor(planetColor);
+
+            return (
+              <Accordion key={planetKey} sx={{ mb: 2 }}>
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{
+                    backgroundColor: alpha(planetColor, 0.1),
+                    '&:hover': {
+                      backgroundColor: alpha(planetColor, 0.15),
+                    },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                    <Box
+                      sx={{
+                        backgroundColor: planetColor,
+                        color: textColor,
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 'bold',
+                        fontSize: '0.9rem',
+                      }}
+                    >
+                      {getPlanetAbbr(planetKey)}
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        {info.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {info.description}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </AccordionSummary>
+                <AccordionDetails>
+
+                  {/* Planet in House Effects */}
+                  {planetInHouseEffects[planetKey] && (
+                    <Box sx={{ mb: 3, width: '100%' }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: planetColor }}>
+                        Planet in House Effects
+                      </Typography>
+                      <Grid container spacing={1}>
+                        {Object.entries(planetInHouseEffects[planetKey]).map(([houseNum, text]) => (
+                          <Grid item xs={12} sm={6} md={4} key={houseNum}>
+                            <Paper
+                              elevation={0}
+                              sx={{
+                                p: 1.5,
+                                border: `1px solid ${alpha(planetColor, 0.2)}`,
+                                borderRadius: 2,
+                                height: '100%',
+                              }}
+                            >
+                              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, color: planetColor }}>
+                                {info.name.split(' ')[0]} in House {houseNum}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {text}
+                              </Typography>
+                            </Paper>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </Box>
+                  )}
+                </AccordionDetails>
+              </Accordion>
+            );
+          })}
+        </Box>
+
+        <Divider sx={{ my: 6 }} />
+
+
+        <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 1 }}>
+          Planet Information (In Nakshatras)
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+          Detailed information about each planet in each nakshatra in Vedic astrology (Jyotiṣa)
+        </Typography>
+
+        <Box>
+          {Object.entries(planetInfo).map(([planetKey, info]) => {
+            const planetColor = getPlanetColor(planetKey);
+            const textColor = getTextColor(planetColor);
+
+            return (
+              <Accordion key={planetKey} sx={{ mb: 2 }}>
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{
+                    backgroundColor: alpha(planetColor, 0.1),
+                    '&:hover': {
+                      backgroundColor: alpha(planetColor, 0.15),
+                    },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                    <Box
+                      sx={{
+                        backgroundColor: planetColor,
+                        color: textColor,
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 'bold',
+                        fontSize: '0.9rem',
+                      }}
+                    >
+                      {getPlanetAbbr(planetKey)}
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        {info.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {info.description}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </AccordionSummary>
+                <AccordionDetails>
+
+                  {/* Planet in Nakshatra Predictions */}
+                  {planetInNakshatra[planetKey] && (
+                    <Box sx={{ mb: 3, width: '100%' }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: planetColor }}>
+                        Planet in Nakshatra
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        How {info.name.split(' ')[0]} manifests in each of the 27 lunar mansions (nakshatras)
+                      </Typography>
+                      <Grid container spacing={1}>
+                        {Object.entries(planetInNakshatra[planetKey]).map(([nakshatra, text]) => (
+                          <Grid item xs={12} sm={6} md={4} key={nakshatra}>
+                            <Paper
+                              elevation={0}
+                              sx={{
+                                p: 1.5,
+                                border: `1px solid ${alpha(planetColor, 0.2)}`,
+                                borderRadius: 2,
+                                height: '100%',
+                              }}
+                            >
+                              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, color: planetColor }}>
+                                {info.name.split(' ')[0]} in {nakshatra}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {text}
+                              </Typography>
+                            </Paper>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </Box>
+                  )}
                 </AccordionDetails>
               </Accordion>
             );
