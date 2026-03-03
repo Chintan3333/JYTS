@@ -785,6 +785,37 @@ const isBetweenArc = (startDeg, endDeg, pointDeg) => {
   return rel <= arc;
 };
 
+const NAVAMSA_SIZE_DEG = 3 + 20 / 60; // 3°20′
+const NAKSHATRA_SIZE_DEG = 13 + 20 / 60; // 13°20′
+
+const getNakshatraPadaFromLongitude = (longitudeDeg) => {
+  const lon = (Number(longitudeDeg) % 360 + 360) % 360;
+  const nakIndex = Math.floor(lon / NAKSHATRA_SIZE_DEG);
+  const degreeInsideNakshatra = lon % NAKSHATRA_SIZE_DEG;
+  const pada = Math.floor(degreeInsideNakshatra / NAVAMSA_SIZE_DEG) + 1;
+  return {
+    nakshatra: nakshatras[nakIndex],
+    pada,
+    degreeInsideNakshatra,
+  };
+};
+
+const getNavamsaSignFromLongitude = (longitudeDeg) => {
+  const lon = (Number(longitudeDeg) % 360 + 360) % 360;
+  const navIndex = Math.floor(lon / NAVAMSA_SIZE_DEG) % 12;
+  return zodiac[navIndex];
+};
+
+const buildHousePlanets = (planetKeys, houseGetter) => {
+  const byHouse = {};
+  for (let h = 1; h <= 12; h++) byHouse[h] = [];
+  planetKeys.forEach((planetKey) => {
+    const h = houseGetter(planetKey);
+    if (h && byHouse[h]) byHouse[h].push(planetKey);
+  });
+  return byHouse;
+};
+
 const analyzeYogasAndDoshas = (chart) => {
   const planets = chart.planets;
   const ascSign = chart.ascendant.sign;
@@ -816,6 +847,7 @@ const analyzeYogasAndDoshas = (chart) => {
   const adhiYogas = [];
   const parivartanaYogas = [];
   const doshas = [];
+  const nabhasYogas = [];
 
   // 1) Kendra-Trikona Raja Yoga
   const kendraLords = [1, 4, 7, 10].map((h) => ({ house: h, lord: houseLords[h] }));
@@ -840,7 +872,7 @@ const analyzeYogasAndDoshas = (chart) => {
             name: 'Kendra-Trikona Raja Yoga',
             planets: [toPlanetLabel(k.lord), toPlanetLabel(t.lord)],
             condition: conjunction ? 'Conjunction' : mutualAspect ? 'Mutual aspect (7th)' : 'Exchange (Parivartana)',
-            description: `${toPlanetLabel(k.lord)} (Kendra lord) connected with ${toPlanetLabel(t.lord)} (Trikona lord).`,
+            description: `${toPlanetLabel(k.lord)} (Kendra house ${k.house} lord) connected with ${toPlanetLabel(t.lord)} (Trikona house ${t.house} lord).`,
           });
         }
       }
@@ -905,29 +937,29 @@ const analyzeYogasAndDoshas = (chart) => {
   });
 
   // 3) Basic Dhana Yoga (1/2/11/5/9 lords)
-  const wealthLordKeys = [1, 2, 11, 5, 9].map((h) => houseLords[h]);
+  const wealthLordKeys = [1, 2, 11, 5, 9].map((h) => ({ house: h, lord: houseLords[h] }));
   const wealthPairs = [];
   for (let i = 0; i < wealthLordKeys.length; i++) {
     for (let j = i + 1; j < wealthLordKeys.length; j++) {
       const a = wealthLordKeys[i];
       const b = wealthLordKeys[j];
-      if (!a || !b || a === b) continue;
-      const pa = planets[a];
-      const pb = planets[b];
+      if (!a || !b || a.lord === b.lord) continue;
+      const pa = planets[a.lord];
+      const pb = planets[b.lord];
       if (!pa || !pb) continue;
       const conjunction = pa.sign === pb.sign;
       const mutualAspect = isSeventhByHouse(pa.house, pb.house) && isSeventhByHouse(pb.house, pa.house);
       const exchange =
-        PLANET_OWN_SIGNS[a]?.includes(pb.sign) &&
-        PLANET_OWN_SIGNS[b]?.includes(pa.sign);
+        PLANET_OWN_SIGNS[a.lord]?.includes(pb.sign) &&
+        PLANET_OWN_SIGNS[b.lord]?.includes(pa.sign);
       // const oneInOthersHouse =
       //   PLANET_OWN_SIGNS[b]?.includes(pa.sign) ||
       //   PLANET_OWN_SIGNS[a]?.includes(pb.sign);
-      if (conjunction || mutualAspect || exchange ) {
+      if (conjunction || mutualAspect || exchange) {
         wealthPairs.push({
           name: 'Basic Dhana Yoga',
-          planets: [toPlanetLabel(a), toPlanetLabel(b)],
-          description: `Connection between wealth lords via ${conjunction ? 'conjunction' : mutualAspect ? 'mutual aspect' : exchange ? 'exchange' : 'one in other\'s sign'}.`,
+          planets: [toPlanetLabel(a.lord), toPlanetLabel(b.lord)],
+          description: `Connection between wealth lords (${a.house} and ${b.house}) via ${conjunction ? 'conjunction' : mutualAspect ? 'mutual aspect' : exchange ? 'exchange' : 'one in other\'s sign'}.`,
         });
       }
     }
@@ -1039,6 +1071,128 @@ const analyzeYogasAndDoshas = (chart) => {
     }
   }
 
+  // Nabhas Yogas (only 7 classical planets)
+  const seven = ['sun', 'moon', 'mars', 'mercury', 'jupiter', 'venus', 'saturn'];
+  const signToGroup = (sign) => {
+    const movable = ['Aries', 'Cancer', 'Libra', 'Capricorn'];
+    const fixed = ['Taurus', 'Leo', 'Scorpio', 'Aquarius'];
+    const dual = ['Gemini', 'Virgo', 'Sagittarius', 'Pisces'];
+    if (movable.includes(sign)) return 'char';
+    if (fixed.includes(sign)) return 'sthira';
+    if (dual.includes(sign)) return 'dual';
+    return null;
+  };
+  const allInSameGroup = (group) =>
+    seven.every((p) => signToGroup(planets[p]?.sign) === group);
+  if (allInSameGroup('char')) {
+    nabhasYogas.push({ name: 'Rajju Yoga', description: 'All 7 planets in movable (Chara) signs.' });
+  } else if (allInSameGroup('sthira')) {
+    nabhasYogas.push({ name: 'Mushala Yoga', description: 'All 7 planets in fixed (Sthira) signs.' });
+  } else if (allInSameGroup('dual')) {
+    nabhasYogas.push({ name: 'Nala Yoga', description: 'All 7 planets in dual (Dwiswabhava) signs.' });
+  }
+
+  const benefics = ['jupiter', 'venus', 'moon', 'mercury'];
+  const malefics = ['sun', 'mars', 'saturn'];
+  const kendraHousesList = [1, 4, 7, 10];
+
+  const kendraHousePlanets = kendraHousesList.reduce((acc, h) => {
+    acc[h] = seven.filter((p) => planets[p]?.house === h);
+    return acc;
+  }, {});
+
+  const countKendrasWith = (fn) =>
+    kendraHousesList.filter((h) => kendraHousePlanets[h].length > 0 && kendraHousePlanets[h].every(fn)).length;
+
+  if (countKendrasWith((p) => benefics.includes(p)) >= 3) {
+    nabhasYogas.push({ name: 'Mala Yoga', description: 'At least 3 Kendra houses occupied only by benefic planets.' });
+  }
+  if (countKendrasWith((p) => malefics.includes(p)) >= 3) {
+    nabhasYogas.push({ name: 'Vyala Yoga', description: 'At least 3 Kendra houses occupied only by malefic planets.' });
+  }
+
+  const allHouses = seven.map((p) => planets[p]?.house);
+  const uniqueHouses = Array.from(new Set(allHouses));
+  const inRange = (start, end) =>
+    uniqueHouses.every((h) =>
+      start <= end ? h >= start && h <= end : h >= start || h <= end
+    );
+
+  if (inRange(1, 4) || inRange(4, 7) || inRange(7, 10) || inRange(10, 12) && inRange(1, 1)) {
+    nabhasYogas.push({ name: 'Gada Yoga', description: 'All 7 planets confined to any two adjacent Kendra houses (1&4, 4&7, 7&10, 10&1).' });
+  }
+  if (uniqueHouses.every((h) => h === 1 || h === 7)) {
+    nabhasYogas.push({ name: 'Sakata Yoga', description: 'All 7 planets confined to 1st and 7th houses.' });
+  }
+  if (uniqueHouses.every((h) => h === 4 || h === 10)) {
+    nabhasYogas.push({ name: 'Vihaga Yoga', description: 'All 7 planets confined to 4th and 10th houses.' });
+  }
+  if (uniqueHouses.every((h) => [1, 5, 9].includes(h))) {
+    nabhasYogas.push({ name: 'Shrungataka Yoga', description: 'All 7 planets within 1st, 5th and 9th houses.' });
+  }
+  if (uniqueHouses.every((h) => ![1, 5, 9].includes(h))) {
+    nabhasYogas.push({ name: 'Hala Yoga', description: 'All 7 planets outside 1st, 5th and 9th houses.' });
+  }
+
+  const hasBenefic = (h) => kendraHousePlanets[h].some((p) => benefics.includes(p));
+  const hasMalefic = (h) => kendraHousePlanets[h].some((p) => malefics.includes(p));
+  if (hasBenefic(1) && hasBenefic(7) && hasMalefic(4) && hasMalefic(10)) {
+    nabhasYogas.push({ name: 'Vajra Yoga', description: 'Benefics in 1 and 7, malefics in 4 and 10.' });
+  }
+  if (hasBenefic(4) && hasBenefic(10) && hasMalefic(1) && hasMalefic(7)) {
+    nabhasYogas.push({ name: 'Yava Yoga', description: 'Benefics in 4 and 10, malefics in 1 and 7.' });
+  }
+  if (kendraHousesList.every((h) => hasBenefic(h) && hasMalefic(h))) {
+    nabhasYogas.push({ name: 'Kamal Yoga', description: 'All four Kendra houses have a mix of benefic and malefic planets.' });
+  }
+  if (uniqueHouses.every((h) => !kendraHousesList.includes(h))) {
+    nabhasYogas.push({ name: 'Vapi Yoga', description: 'All 7 planets are outside Kendra houses (1,4,7,10).' });
+  }
+  if (inRange(1, 4)) {
+    nabhasYogas.push({ name: 'Yupa Yoga', description: 'All 7 planets between 1st and 4th houses.' });
+  }
+  if (inRange(4, 7)) {
+    nabhasYogas.push({ name: 'Shara Yoga', description: 'All 7 planets between 4th and 7th houses.' });
+  }
+  if (inRange(7, 10)) {
+    nabhasYogas.push({ name: 'Shakti Yoga', description: 'All 7 planets between 7th and 10th houses.' });
+  }
+  if (inRange(10, 12) || inRange(10, 1)) {
+    nabhasYogas.push({ name: 'Danda Yoga', description: 'All 7 planets between 10th and 1st houses.' });
+  }
+  if (inRange(1, 7)) {
+    nabhasYogas.push({ name: 'Nauka Yoga', description: 'All 7 planets between 1st and 7th houses.' });
+  }
+  if (inRange(4, 10)) {
+    nabhasYogas.push({ name: 'Kuta Yoga', description: 'All 7 planets between 4th and 10th houses.' });
+  }
+  if (inRange(7, 1)) {
+    nabhasYogas.push({ name: 'Chhala Yoga', description: 'All 7 planets between 7th and 1st houses.' });
+  }
+  if (inRange(10, 4)) {
+    nabhasYogas.push({ name: 'Chapa Yoga', description: 'All 7 planets between 10th and 4th houses.' });
+  }
+
+  // Fallback Nabhas patterns if none of the above captured
+  if (nabhasYogas.length === 0) {
+    const distinctCount = uniqueHouses.length;
+    if (distinctCount === 1) {
+      nabhasYogas.push({ name: 'Gola Yoga', description: 'All 7 planets in a single house.' });
+    } else if (distinctCount === 2) {
+      nabhasYogas.push({ name: 'Yuga Yoga', description: 'All 7 planets distributed across 2 houses.' });
+    } else if (distinctCount === 3) {
+      nabhasYogas.push({ name: 'Shula Yoga', description: 'All 7 planets distributed across 3 houses.' });
+    } else if (distinctCount === 4) {
+      nabhasYogas.push({ name: 'Kedara Yoga', description: 'All 7 planets distributed across 4 houses.' });
+    } else if (distinctCount === 5) {
+      nabhasYogas.push({ name: 'Pasha Yoga', description: 'All 7 planets distributed across 5 houses.' });
+    } else if (distinctCount === 6) {
+      nabhasYogas.push({ name: 'Damini Yoga', description: 'All 7 planets distributed across 6 houses.' });
+    } else if (distinctCount === 7) {
+      nabhasYogas.push({ name: 'Veenā Yoga', description: 'All 7 planets distributed across all 7 occupied houses.' });
+    }
+  }
+
   return {
     rajaYogas,
     neechaBhangaYogas,
@@ -1050,6 +1204,7 @@ const analyzeYogasAndDoshas = (chart) => {
     adhiYogas,
     parivartanaYogas,
     doshas,
+    nabhasYogas,
   };
 };
 
@@ -1334,6 +1489,33 @@ function CelebrityDetail() {
     new Date(`${celebrity.birthDate.split("T")[0]}T${celebrity.birthTime}:00${celebrity.timeZone}`),
     moonNakshatraDetails.nakshatra,
     moonNakshatraDetails.degreeInsideNakshatra)
+
+  // D9 / Navamsa chart (Navamsa sign = Nakshatra pada sign)
+  const ascLonD1 = zodiacSigns.indexOf(celebrity.ascendant.sign) * 30 + Number(celebrity.ascendant.degree || 0);
+  const d9AscSign = getNavamsaSignFromLongitude(ascLonD1);
+  const d9AscNak = getNakshatraPadaFromLongitude(ascLonD1);
+  const d9HouseSigns = Array.from({ length: 12 }, (_, i) => getSignForHouse(i + 1, d9AscSign));
+
+  const d9PlanetSigns = {};
+  Object.entries(celebrity.planets).forEach(([planetKey, data]) => {
+    const planetCap = planetKey.charAt(0).toUpperCase() + planetKey.slice(1);
+    const lon = planetNakshatraDetails[planetCap]?.planetLongitude
+      ? Number(planetNakshatraDetails[planetCap].planetLongitude)
+      : (zodiacSigns.indexOf(data.sign) * 30 + Number(data.degree || 0));
+    d9PlanetSigns[planetKey] = getNavamsaSignFromLongitude(lon);
+  });
+  const d9PlanetsByHouse = buildHousePlanets(
+    Object.keys(celebrity.planets),
+    (p) => getHouseNumber(d9PlanetSigns[p], d9AscSign)
+  );
+
+  // Chandra Kundali (Moon chart): Moon becomes 1st house
+  const moonAscSign = celebrity.planets.moon?.sign || celebrity.ascendant.sign;
+  const moonHouseSigns = Array.from({ length: 12 }, (_, i) => getSignForHouse(i + 1, moonAscSign));
+  const moonPlanetsByHouse = buildHousePlanets(
+    Object.keys(celebrity.planets),
+    (p) => getHouseNumber(celebrity.planets[p].sign, moonAscSign)
+  );
 
 
 
@@ -2225,6 +2407,219 @@ function CelebrityDetail() {
             <Divider sx={{ my: 3 }} />
           </Grid>
 
+          {/* D9 / Navamsa Chart */}
+          <Grid item xs={12}>
+            <Accordion
+              defaultExpanded={false}
+              sx={{
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                borderRadius: '8px !important',
+                '&:before': { display: 'none' },
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+              }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  D9 / Navamsa Chart
+                </Typography>
+                <Chip label={`Asc: ${d9AscSign}`} size="small" sx={{ ml: 1 }} variant="outlined" />
+              </AccordionSummary>
+              <AccordionDetails sx={{ pt: 0 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  In D9, each planet is placed in the Navamsa sign of its Nakshatra Pada. D9 Ascendant is calculated from the Ascendant’s Nakshatra Pada.
+                </Typography>
+                <Paper elevation={0} sx={{ p: 2, mb: 2, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    D9 Ascendant
+                  </Typography>
+                  <Typography variant="body1" fontWeight={600}>
+                    {d9AscSign}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Nakshatra: {d9AscNak.nakshatra} · Pada: {d9AscNak.pada} · D1 Asc longitude: {ascLonD1.toFixed(2)}°
+                  </Typography>
+                </Paper>
+
+                <Grid container spacing={2}>
+                  {Array.from({ length: 12 }, (_, i) => {
+                    const house = i + 1;
+                    const sign = d9HouseSigns[i];
+                    const planetsHere = d9PlanetsByHouse[house] || [];
+                    return (
+                      <Grid item xs={12} sm={6} md={3} key={`d9-${house}`}>
+                        <Paper
+                          elevation={0}
+                          sx={{
+                            p: 2,
+                            height: '100%',
+                            border: (theme) => `1px solid ${theme.palette.divider}`,
+                            borderRadius: 2,
+                            backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 1 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                              House {house}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {sign}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                            {planetsHere.length === 0 ? (
+                              <Typography variant="body2" color="text.secondary">
+                                —
+                              </Typography>
+                            ) : (
+                              planetsHere.map((planetKey) => {
+                                const bgColor = getPlanetColor(planetKey);
+                                const textColor = getTextColor(bgColor);
+                                const planetCap = planetKey.charAt(0).toUpperCase() + planetKey.slice(1);
+                                const d1Nak = planetNakshatraDetails[planetCap];
+                                return (
+                                  <Tooltip
+                                    key={`d9-${house}-${planetKey}`}
+                                    arrow
+                                    placement="top"
+                                    title={
+                                      <>
+                                        <strong>{planetCap}</strong>
+                                        <br /><strong>D9 sign:</strong> {d9PlanetSigns[planetKey]}
+                                        {d1Nak && (
+                                          <>
+                                            <br /><strong>Nakshatra:</strong> {d1Nak.nakshatra} · <strong>Pada:</strong> {d1Nak.pada}
+                                          </>
+                                        )}
+                                      </>
+                                    }
+                                  >
+                                    <Box
+                                      sx={{
+                                        backgroundColor: bgColor,
+                                        color: textColor,
+                                        padding: '2px 6px',
+                                        borderRadius: '999px',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 'bold',
+                                        cursor: 'help',
+                                      }}
+                                    >
+                                      {getPlanetAbbr(planetKey)}
+                                    </Box>
+                                  </Tooltip>
+                                );
+                              })
+                            )}
+                          </Box>
+                        </Paper>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              </AccordionDetails>
+            </Accordion>
+          </Grid>
+
+          {/* Chandra Kundali / Moon Chart */}
+          <Grid item xs={12}>
+            <Accordion
+              defaultExpanded={false}
+              sx={{
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                borderRadius: '8px !important',
+                '&:before': { display: 'none' },
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+              }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Chandra Kundali (Moon Chart)
+                </Typography>
+                <Chip label={`Moon as Asc: ${moonAscSign}`} size="small" sx={{ ml: 1 }} variant="outlined" />
+              </AccordionSummary>
+              <AccordionDetails sx={{ pt: 0 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Moon is treated as the 1st house. All other houses follow in order from the Moon’s sign.
+                </Typography>
+
+                <Grid container spacing={2}>
+                  {Array.from({ length: 12 }, (_, i) => {
+                    const house = i + 1;
+                    const sign = moonHouseSigns[i];
+                    const planetsHere = moonPlanetsByHouse[house] || [];
+                    return (
+                      <Grid item xs={12} sm={6} md={3} key={`moon-${house}`}>
+                        <Paper
+                          elevation={0}
+                          sx={{
+                            p: 2,
+                            height: '100%',
+                            border: (theme) => `1px solid ${theme.palette.divider}`,
+                            borderRadius: 2,
+                            backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 1 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                              House {house}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {sign}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                            {planetsHere.length === 0 ? (
+                              <Typography variant="body2" color="text.secondary">
+                                —
+                              </Typography>
+                            ) : (
+                              planetsHere.map((planetKey) => {
+                                const bgColor = getPlanetColor(planetKey);
+                                const textColor = getTextColor(bgColor);
+                                const data = celebrity.planets[planetKey];
+                                return (
+                                  <Tooltip
+                                    key={`moon-${house}-${planetKey}`}
+                                    arrow
+                                    placement="top"
+                                    title={
+                                      <>
+                                        <strong>{toPlanetLabel(planetKey)}</strong>
+                                        <br /><strong>D1 sign:</strong> {data.sign} · <strong>D1 house:</strong> {data.house}
+                                      </>
+                                    }
+                                  >
+                                    <Box
+                                      sx={{
+                                        backgroundColor: bgColor,
+                                        color: textColor,
+                                        padding: '2px 6px',
+                                        borderRadius: '999px',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 'bold',
+                                        cursor: 'help',
+                                      }}
+                                    >
+                                      {getPlanetAbbr(planetKey)}
+                                    </Box>
+                                  </Tooltip>
+                                );
+                              })
+                            )}
+                          </Box>
+                        </Paper>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              </AccordionDetails>
+            </Accordion>
+          </Grid>
+
+          <Grid item xs={12}>
+            <Divider sx={{ my: 3 }} />
+          </Grid>
+
 
           {/* Nakshatra Section - Expandable */}
           <Grid item xs={12}>
@@ -2546,7 +2941,8 @@ function CelebrityDetail() {
                     { title: '6. Buddhi Yogas', items: yogaAnalysis.buddhiYogas, color: 'secondary', descKey: 'description' },
                     { title: '7. Adhi Yoga', items: yogaAnalysis.adhiYogas, color: 'info', descKey: 'description' },
                     { title: '8. Parivartana Yogas', items: yogaAnalysis.parivartanaYogas, color: 'primary', descKey: 'description' },
-                    { title: '9 & 10. Doshas (Grahan / Kaal Sarp / Kemadruma)', items: yogaAnalysis.doshas, color: 'error', descKey: 'description' },
+                    { title: '9. Nabhas Yogas', items: yogaAnalysis.nabhasYogas, color: 'info', descKey: 'description' },
+                    { title: '10. Doshas (Grahan / Kaal Sarp / Kemadruma)', items: yogaAnalysis.doshas, color: 'error', descKey: 'description' },
                   ].map((section) => (
                     <Grid item xs={12} key={section.title}>
                       <Paper elevation={0} sx={{ p: 2, border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.2)}` }}>

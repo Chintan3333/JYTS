@@ -11,6 +11,7 @@ import CelebrityDetail from './pages/CelebrityDetail';
 import Analysis from './pages/Analysis';
 import AdvancedSearch from './pages/AdvancedSearch';
 import PlanetInfo from './pages/PlanetInfo';
+import Gochar from './pages/Gochar';
 
 function App() {
   const [mode, setMode] = useState('light');
@@ -36,6 +37,7 @@ function App() {
           <Route path="/analysis" element={<Analysis />} />
           <Route path="/advanced-search" element={<AdvancedSearch />} />
           <Route path="/planet-info" element={<PlanetInfo />} />
+          <Route path="/gochar" element={<Gochar />} />
         </Routes>
       </Router>
     </ThemeProvider>

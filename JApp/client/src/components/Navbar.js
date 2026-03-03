@@ -23,6 +23,7 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import SearchIcon from '@mui/icons-material/Search';
 import InfoIcon from '@mui/icons-material/Info';
+import PublicIcon from '@mui/icons-material/Public';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -55,6 +56,11 @@ function Navbar({ onToggleTheme, mode }) {
       title: 'Planet Info',
       path: '/planet-info',
       icon: <InfoIcon />,
+    },
+    {
+      title: 'Gochar',
+      path: '/gochar',
+      icon: <PublicIcon />,
     },
     {
       title: 'Add Celebrity',
