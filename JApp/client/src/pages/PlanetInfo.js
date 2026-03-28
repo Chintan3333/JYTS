@@ -571,6 +571,112 @@ function PlanetInfo() {
                       </Paper>
                     </Grid>
 
+
+                    <Grid item xs={12} sm={6}>
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          p: 2,
+                          border: `1px solid ${alpha(nakshatraColor, 0.2)}`,
+                          borderRadius: 2,
+                          backgroundColor: alpha(nakshatraColor, 0.03),
+                        }}
+                      >
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5, color: nakshatraColor }}>
+                          Strengths
+                        </Typography>
+                        <Grid container spacing={1}>
+                          {nakshatra.lightest_traits.map((item, idx) => (
+                            <Grid item xs={12} sm={6} key={idx}>
+                              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                <Box
+                                  sx={{
+                                    width: 6,
+                                    height: 6,
+                                    borderRadius: '50%',
+                                    backgroundColor: nakshatraColor,
+                                    mt: 0.75,
+                                    flexShrink: 0,
+                                  }}
+                                />
+                                <Typography variant="body2">{item}</Typography>
+                              </Box>
+                            </Grid>
+                          ))}
+                          {nakshatra.main_strengths.map((item, idx) => (
+                            <Grid item xs={12} sm={6}  key={idx}>
+                              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                <Box
+                                  sx={{
+                                    width: 6,
+                                    height: 6,
+                                    borderRadius: '50%',
+                                    backgroundColor: nakshatraColor,
+                                    mt: 0.75,
+                                    flexShrink: 0,
+                                  }}
+                                />
+                                <Typography variant="body2">{item}</Typography>
+                              </Box>
+                            </Grid>
+                          ))}
+                        </Grid>
+                      </Paper>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          p: 2,
+                          border: `1px solid ${alpha(nakshatraColor, 0.2)}`,
+                          borderRadius: 2,
+                          backgroundColor: alpha(nakshatraColor, 0.03),
+                        }}
+                      >
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5, color: nakshatraColor }}>
+                          Weaknesses
+                        </Typography>
+                        <Grid container spacing={1}>
+
+                          {nakshatra.main_weaknesses.map((item, idx) => (
+                            <Grid item xs={12} sm={6} key={idx}>
+                              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                <Box
+                                  sx={{
+                                    width: 6,
+                                    height: 6,
+                                    borderRadius: '50%',
+                                    backgroundColor: nakshatraColor,
+                                    mt: 0.75,
+                                    flexShrink: 0,
+                                  }}
+                                />
+                                <Typography variant="body2">{item}</Typography>
+                              </Box>
+                            </Grid>
+                          ))}
+                          {nakshatra.darkest_traits.map((item, idx) => (
+                            <Grid item xs={12} sm={6} key={idx}>
+                              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                <Box
+                                  sx={{
+                                    width: 6,
+                                    height: 6,
+                                    borderRadius: '50%',
+                                    backgroundColor: nakshatraColor,
+                                    mt: 0.75,
+                                    flexShrink: 0,
+                                  }}
+                                />
+                                <Typography variant="body2">{item}</Typography>
+                              </Box>
+                            </Grid>
+                          ))}
+                        </Grid>
+                      </Paper>
+                    </Grid>
+
                     {/* Padas Information */}
                     {nakshatra.padas && nakshatra.padas.length > 0 && (
                       <Grid item xs={12}>
@@ -631,7 +737,7 @@ function PlanetInfo() {
                     {/* Summary and Memory Line */}
                     <Grid item xs={12}>
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                        {nakshatra.summaryPoints && nakshatra.summaryPoints.length > 0 && (
+                        {/* {nakshatra.summaryPoints && nakshatra.summaryPoints.length > 0 && (
                           <Paper
                             elevation={0}
                             sx={{
@@ -652,7 +758,7 @@ function PlanetInfo() {
                               ))}
                             </Box>
                           </Paper>
-                        )}
+                        )} */}
                         <Paper
                           elevation={0}
                           sx={{

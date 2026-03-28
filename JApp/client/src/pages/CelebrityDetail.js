@@ -23,6 +23,11 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EditIcon from '@mui/icons-material/Edit';
@@ -816,6 +821,148 @@ const buildHousePlanets = (planetKeys, houseGetter) => {
   return byHouse;
 };
 
+// Divisional chart sign mapping (D2–D60) based on D1 sign + degree.
+// Uses rules from `divisional.txt` / `divisinal.txt`.
+const isOddSignIndex = (signIndex0) => [0, 2, 4, 6, 8, 10].includes(signIndex0); // Aries(0) is odd
+
+/** 0=fire, 1=earth, 2=air, 3=water — Aries/Leo/Sag, Taurus/Virgo/Cap, etc. */
+const elementGroupIndex = (signIndex0) => signIndex0 % 4;
+
+const mapD2SignFromSignDegree = (sign, degree) => {
+  const idx = zodiac.indexOf(sign);
+  const deg = Number(degree || 0);
+  const odd = isOddSignIndex(idx);
+  const firstHalf = deg < 15;
+  if (odd) return firstHalf ? 'Leo' : 'Cancer';
+  return firstHalf ? 'Cancer' : 'Leo';
+};
+
+const mapD3SignFromSignDegree = (sign, degree) => {
+  const idx = zodiac.indexOf(sign);
+  const deg = Number(degree || 0);
+  if (deg < 10) return zodiac[idx];
+  if (deg < 20) return zodiac[(idx + 4) % 12]; // 5th including original => +4
+  return zodiac[(idx + 8) % 12]; // 9th including original => +8
+};
+
+const mapD4SignFromSignDegree = (sign, degree) => {
+  const idx = zodiac.indexOf(sign);
+  const deg = Number(degree || 0);
+  if (deg < 7.5) return zodiac[idx];
+  if (deg < 15) return zodiac[(idx + 3) % 12]; // 4th => +3
+  if (deg < 22.5) return zodiac[(idx + 6) % 12]; // 7th => +6
+  return zodiac[(idx + 9) % 12]; // 10th => +9
+};
+
+const mapD7SignFromSignDegree = (sign, degree) => {
+  const idx = zodiac.indexOf(sign);
+  const deg = Number(degree || 0);
+  const partSize = 30 / 7; // ~4.2857°
+  const part = Math.min(7, Math.floor(deg / partSize) + 1); // 1..7
+  const startOffset = isOddSignIndex(idx) ? 0 : 6; // even signs start from 7th sign => +6
+  return zodiac[(idx + startOffset + (part - 1)) % 12];
+};
+
+const mapD10SignFromSignDegree = (sign, degree) => {
+  const idx = zodiac.indexOf(sign);
+  const deg = Number(degree || 0);
+  const part = Math.min(10, Math.floor(deg / 3) + 1); // 1..10, each 3°
+  const startOffset = isOddSignIndex(idx) ? 0 : 8; // even signs start from 9th => +8
+  return zodiac[(idx + startOffset + (part - 1)) % 12];
+};
+
+// D12: 12 parts of 2.5°; count forward from same sign.
+const mapD12SignFromSignDegree = (sign, degree) => {
+  const idx = zodiac.indexOf(sign);
+  const deg = Number(degree || 0);
+  const part = Math.min(12, Math.floor(deg / 2.5) + 1);
+  return zodiac[(idx + (part - 1)) % 12];
+};
+
+// D16: 16 parts of 1.875°; element-based start (Fire→Aries, Earth→Capricorn, Air→Libra, Water→Cancer).
+const mapD16SignFromSignDegree = (sign, degree) => {
+  const idx = zodiac.indexOf(sign);
+  const deg = Number(degree || 0);
+  const part = Math.min(16, Math.floor(deg / 1.875) + 1);
+  const g = elementGroupIndex(idx);
+  const startIdx = g === 0 ? 0 : g === 1 ? 9 : g === 2 ? 6 : 3;
+  return zodiac[(startIdx + (part - 1)) % 12];
+};
+
+// D20: 20 parts of 1.5°; Fire→Aries, Earth→Sagittarius, Air→Libra, Water→Cancer.
+const mapD20SignFromSignDegree = (sign, degree) => {
+  const idx = zodiac.indexOf(sign);
+  const deg = Number(degree || 0);
+  const part = Math.min(20, Math.floor(deg / 1.5) + 1);
+  const g = elementGroupIndex(idx);
+  const startIdx = g === 0 ? 0 : g === 1 ? 8 : g === 2 ? 6 : 3;
+  return zodiac[(startIdx + (part - 1)) % 12];
+};
+
+// D24: 24 parts of 1.25°; odd signs from Leo, even signs from Cancer.
+const mapD24SignFromSignDegree = (sign, degree) => {
+  const idx = zodiac.indexOf(sign);
+  const deg = Number(degree || 0);
+  const part = Math.min(24, Math.floor(deg / 1.25) + 1);
+  const startIdx = isOddSignIndex(idx) ? 4 : 3; // Leo : Cancer
+  return zodiac[(startIdx + (part - 1)) % 12];
+};
+
+// D27: 27 parts; Fire→Aries, Earth→Cancer, Air→Libra, Water→Capricorn.
+const mapD27SignFromSignDegree = (sign, degree) => {
+  const idx = zodiac.indexOf(sign);
+  const deg = Number(degree || 0);
+  const partSize = 30 / 27;
+  const part = Math.min(27, Math.floor(deg / partSize) + 1);
+  const g = elementGroupIndex(idx);
+  const startIdx = g === 0 ? 0 : g === 1 ? 3 : g === 2 ? 6 : 9;
+  return zodiac[(startIdx + (part - 1)) % 12];
+};
+
+// D30: irregular segments (odd vs even signs); sign from segment ruler’s sign.
+const mapD30SignFromSignDegree = (sign, degree) => {
+  const idx = zodiac.indexOf(sign);
+  let d = Number(degree || 0);
+  if (d >= 30) d = 29.999999;
+  const odd = isOddSignIndex(idx);
+  if (odd) {
+    if (d < 5) return 'Aries';
+    if (d < 10) return 'Aquarius';
+    if (d < 18) return 'Sagittarius';
+    if (d < 25) return 'Gemini';
+    return 'Libra';
+  }
+  if (d < 5) return 'Taurus';
+  if (d < 12) return 'Virgo';
+  if (d < 20) return 'Pisces';
+  if (d < 25) return 'Capricorn';
+  return 'Scorpio';
+};
+
+// D60: 60 parts of 0.5°; odd from Aries, even from Libra. Part ≈ ceil(deg / 0.5) (see divisinal.txt examples).
+const mapD60SignFromSignDegree = (sign, degree) => {
+  const idx = zodiac.indexOf(sign);
+  const deg = Number(degree || 0);
+  const part = Math.min(60, Math.max(1, Math.ceil(deg / 0.5)));
+  const startIdx = isOddSignIndex(idx) ? 0 : 6; // Aries : Libra
+  return zodiac[(startIdx + (part - 1)) % 12];
+};
+
+const DIVISIONAL_MAP_BY_KEY = {
+  D2: mapD2SignFromSignDegree,
+  D3: mapD3SignFromSignDegree,
+  D4: mapD4SignFromSignDegree,
+  D7: mapD7SignFromSignDegree,
+  D10: mapD10SignFromSignDegree,
+  D12: mapD12SignFromSignDegree,
+  D16: mapD16SignFromSignDegree,
+  D20: mapD20SignFromSignDegree,
+  D24: mapD24SignFromSignDegree,
+  D27: mapD27SignFromSignDegree,
+  D30: mapD30SignFromSignDegree,
+  D60: mapD60SignFromSignDegree,
+};
+
 const analyzeYogasAndDoshas = (chart) => {
   const planets = chart.planets;
   const ascSign = chart.ascendant.sign;
@@ -1400,6 +1547,8 @@ function CelebrityDetail() {
   const [celebrity, setCelebrity] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [divisionalDialogOpen, setDivisionalDialogOpen] = useState(false);
+  const [divisionalTab, setDivisionalTab] = useState(0);
 
   useEffect(() => {
     fetchCelebrity();
@@ -1627,6 +1776,18 @@ function CelebrityDetail() {
 
           <Grid item xs={12}>
             <Divider sx={{ my: 3 }} />
+          </Grid>
+
+          {/* Divisional Charts */}
+          <Grid item xs={12}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+              <Button
+                variant="outlined"
+                onClick={() => setDivisionalDialogOpen(true)}
+              >
+                Divisional Charts (D2–D60)
+              </Button>
+            </Box>
           </Grid>
 
           {/* Vedic Astrology Kundli - Expandable */}
@@ -3552,6 +3713,172 @@ function CelebrityDetail() {
             <Divider sx={{ my: 3 }} />
           </Grid>
         </Grid>
+
+        {/* Divisional charts popup */}
+        <Dialog
+          open={divisionalDialogOpen}
+          onClose={() => setDivisionalDialogOpen(false)}
+          maxWidth="lg"
+          fullWidth
+        >
+          <DialogTitle sx={{ fontWeight: 700 }}>
+            Divisional Charts (D2–D60)
+          </DialogTitle>
+          <DialogContent>
+            <Tabs
+              value={divisionalTab}
+              onChange={(_, v) => setDivisionalTab(v)}
+              variant="scrollable"
+              allowScrollButtonsMobile
+              sx={{ mb: 2 }}
+            >
+              <Tab label="D2" />
+              <Tab label="D3" />
+              <Tab label="D4" />
+              <Tab label="D7" />
+              <Tab label="D10" />
+              <Tab label="D12" />
+              <Tab label="D16" />
+              <Tab label="D20" />
+              <Tab label="D24" />
+              <Tab label="D27" />
+              <Tab label="D30" />
+              <Tab label="D60" />
+            </Tabs>
+
+            {(() => {
+              const planetKeys = Object.keys(celebrity?.planets || {});
+              if (planetKeys.length === 0) {
+                return (
+                  <Typography variant="body2" color="text.secondary">
+                    Divisional charts unavailable.
+                  </Typography>
+                );
+              }
+
+              const d1AscSign = celebrity.ascendant.sign;
+              const d1AscDeg = Number(celebrity.ascendant.degree || 0);
+
+              const getDivChart = (which) => {
+                const map = DIVISIONAL_MAP_BY_KEY[which];
+                if (!map) return null;
+
+                const ascSign = map(d1AscSign, d1AscDeg);
+                const houseSigns = Array.from({ length: 12 }, (_, i) => getSignForHouse(i + 1, ascSign));
+                const planetSigns = {};
+                planetKeys.forEach((p) => {
+                  const data = celebrity.planets[p];
+                  planetSigns[p] = map(data.sign, Number(data.degree || 0));
+                });
+                const planetsByHouse = buildHousePlanets(
+                  planetKeys,
+                  (p) => getHouseNumber(planetSigns[p], ascSign)
+                );
+                return { ascSign, houseSigns, planetsByHouse, planetSigns };
+              };
+
+              const chartKeys = ['D2', 'D3', 'D4', 'D7', 'D10', 'D12', 'D16', 'D20', 'D24', 'D27', 'D30', 'D60'];
+              const charts = chartKeys.map((key) => ({ key, label: key, ...(getDivChart(key)) }));
+
+              const selected = charts[divisionalTab] || charts[0];
+
+              return (
+                <Box>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      mb: 2,
+                      border: (theme) => `1px solid ${theme.palette.divider}`,
+                      borderRadius: 2,
+                    }}
+                  >
+                    <Typography variant="subtitle2" color="text.secondary">
+                      {selected.label} Ascendant
+                    </Typography>
+                    <Typography variant="body1" fontWeight={700}>
+                      {selected.ascSign}
+                    </Typography>
+                  </Paper>
+
+                  <Grid container spacing={2}>
+                    {Array.from({ length: 12 }, (_, i) => {
+                      const house = i + 1;
+                      const sign = selected.houseSigns[i];
+                      const planetsHere = selected.planetsByHouse[house] || [];
+
+                      return (
+                        <Grid item xs={12} sm={6} md={3} key={`${selected.label}-${house}`}>
+                          <Paper
+                            elevation={0}
+                            sx={{
+                              p: 2,
+                              height: '100%',
+                              border: (theme) => `1px solid ${theme.palette.divider}`,
+                              borderRadius: 2,
+                              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                            }}
+                          >
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 1 }}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                                House {house}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {sign}
+                              </Typography>
+                            </Box>
+
+                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                              {planetsHere.length === 0 ? (
+                                <Typography variant="body2" color="text.secondary">
+                                  —
+                                </Typography>
+                              ) : (
+                                planetsHere.map((pKey) => {
+                                  const bg = getPlanetColor(pKey);
+                                  const tc = getTextColor(bg);
+                                  const d1 = celebrity.planets[pKey];
+                                  return (
+                                    <Tooltip
+                                      key={`${selected.label}-${house}-${pKey}`}
+                                      arrow
+                                      placement="top"
+                                      title={
+                                        <>
+                                          <strong>{toPlanetLabel(pKey)}</strong>
+                                          <br />D1: {d1.sign} {Number(d1.degree || 0).toFixed(2)}°
+                                          <br />{selected.label}: {selected.planetSigns[pKey]}
+                                        </>
+                                      }
+                                    >
+                                      <Box
+                                        sx={{
+                                          backgroundColor: bg,
+                                          color: tc,
+                                          padding: '2px 6px',
+                                          borderRadius: '999px',
+                                          fontSize: '0.8rem',
+                                          fontWeight: 'bold',
+                                          cursor: 'help',
+                                        }}
+                                      >
+                                        {getPlanetAbbr(pKey)}
+                                      </Box>
+                                    </Tooltip>
+                                  );
+                                })
+                              )}
+                            </Box>
+                          </Paper>
+                        </Grid>
+                      );
+                    })}
+                  </Grid>
+                </Box>
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
       </Paper>
     </Container>
   );

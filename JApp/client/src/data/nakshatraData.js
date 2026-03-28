@@ -51,6 +51,10 @@ export const nakshatraInfo = [
       { range: '6°40′–10°00′ Aries', navamsa: 'Gemini', keywords: 'Communication and intellect', traits: ['Quick learner', 'Communication skills', 'Curiosity', 'Multitasking ability', 'Clever thinking'] },
       { range: '10°00′–13°20′ Aries', navamsa: 'Cancer', keywords: 'Emotional healing', traits: ['Compassionate nature', 'Emotional sensitivity', 'Nurturing ability', 'Intuitive decisions', 'Protective personality'] },
     ],
+    "lightest_traits": ["Healing", "Courage", "Energetic"],
+    "main_strengths": ["Quick starter", "Courageous", "Action-oriented"],
+    "main_weaknesses": ["Impatience", "Unfinished projects"],
+    "darkest_traits": ["Recklessness", "Self-sabotage"]
   },
   {
     number: 2,
@@ -85,6 +89,10 @@ export const nakshatraInfo = [
       { range: '20°00′–23°20′ Aries', navamsa: 'Libra', keywords: 'Relationships and balance', traits: ['Attraction and charm', 'Partnership-focused thinking', 'Diplomatic behavior', 'Desire for harmony', 'Artistic inclination'] },
       { range: '23°20′–26°40′ Aries', navamsa: 'Scorpio', keywords: 'Transformation and intensity', traits: ['Emotional depth', 'Strong sexual energy', 'Secretive personality', 'Powerful inner transformation', 'Magnetic presence'] },
     ],
+    "lightest_traits": ["Transformative", "Resilient"],
+    "main_strengths": ["Strong will", "Creative", "Responsible"],
+    "main_weaknesses": ["Possessiveness", "Intense emotions"],
+    "darkest_traits": ["Obsession with control", "Suppressive"]
   },
   {
     number: 3,
@@ -119,6 +127,10 @@ export const nakshatraInfo = [
       { range: '3°20′–6°40′ Taurus', navamsa: 'Aquarius', keywords: 'Social reform fire', traits: ['Independent thinking', 'Innovative ideas', 'Humanitarian outlook', 'Rational mindset', 'Unconventional personality'] },
       { range: '6°40′–10°00′ Taurus', navamsa: 'Pisces', keywords: 'Spiritual purification', traits: ['Compassionate nature', 'Creative imagination', 'Emotional sensitivity', 'Spiritual transformation', 'Artistic tendencies'] },
     ],
+    "lightest_traits": ["Bravery", "Leadership"],
+    "main_strengths": ["Determined", "Protective", "Just"],
+    "main_weaknesses": ["Harsh speech", "Critical"],
+    "darkest_traits": ["Aggression", "Ruthlessness"]
   },
   {
     number: 4,
@@ -153,6 +165,10 @@ export const nakshatraInfo = [
       { range: '16°40′–20°00′ Taurus', navamsa: 'Gemini', keywords: 'Creative communication', traits: ['Artistic communication', 'Storytelling ability', 'Intellectual creativity', 'Social charm', 'Curiosity and adaptability'] },
       { range: '20°00′–23°20′ Taurus', navamsa: 'Cancer', keywords: 'Emotional nourishment', traits: ['Caring and nurturing nature', 'Strong family attachment', 'Emotional creativity', 'Protective personality', 'Deep sensitivity'] },
     ],
+    "lightest_traits": ["Creative abundance", "Charm"],
+    "main_strengths": ["Attractive", "Nurturing", "Imaginative"],
+    "main_weaknesses": ["Attachment", "Jealousy"],
+    "darkest_traits": ["Obsessive attachment", "Scheming"]
   },
   {
     number: 5,
@@ -187,6 +203,10 @@ export const nakshatraInfo = [
       { range: '0°00′–3°20′ Gemini', navamsa: 'Libra', keywords: 'Social curiosity', traits: ['Charming communication', 'Interest in relationships', 'Artistic expression', 'Diplomatic personality', 'Love for conversation'] },
       { range: '3°20′–6°40′ Gemini', navamsa: 'Scorpio', keywords: 'Deep search', traits: ['Emotional intensity', 'Psychological curiosity', 'Interest in hidden knowledge', 'Strong intuition', 'Transformational experiences'] },
     ],
+    "lightest_traits": ["Curiosity", "Exploration"],
+    "main_strengths": ["Adaptable", "Communicative", "Investigative"],
+    "main_weaknesses": ["Restlessness", "Indecision"],
+    "darkest_traits": ["Superficial charm", "Destructive habits"]
   },
   {
     number: 6,
@@ -221,6 +241,10 @@ export const nakshatraInfo = [
       { range: '13°20′–16°40′ Gemini', navamsa: 'Aquarius', keywords: 'Innovation and reform', traits: ['Interest in science and technology', 'Humanitarian thinking', 'Independent ideas', 'Social reform mindset', 'Intellectual originality'] },
       { range: '16°40′–20°00′ Gemini', navamsa: 'Pisces', keywords: 'Emotional transformation', traits: ['Compassionate and sensitive', 'Strong imagination', 'Spiritual transformation', 'Emotional depth', 'Healing ability'] },
     ],
+    "lightest_traits": ["Emotional insight", "Transformative"],
+    "main_strengths": ["Intuitive", "Innovative"],
+    "main_weaknesses": ["Emotional turbulence", "Negativity"],
+    "darkest_traits": ["Destructive rage", "Self-harm"]
   },
   {
     number: 7,
@@ -255,6 +279,10 @@ export const nakshatraInfo = [
       { range: '26°40′–30°00′ Gemini', navamsa: 'Gemini', keywords: 'Intellectual renewal', traits: ['Teaching ability', 'Strong communication skills', 'Curiosity and adaptability', 'Philosophical thinking', 'Friendly personality'] },
       { range: '0°00′–3°20′ Cancer', navamsa: 'Cancer', keywords: 'Emotional protection', traits: ['Caring and nurturing personality', 'Strong family attachment', 'Emotional intelligence', 'Protective nature', 'Spiritual sensitivity'] },
     ],
+    "lightest_traits": ["Optimism", "Renewal"],
+    "main_strengths": ["Loyal", "Generous", "Resilient"],
+    "main_weaknesses": ["Repeating mistakes", "Lack of focus"],
+    "darkest_traits": ["Escapism", "Repeating cycles"]
   },
   {
     number: 8,
@@ -289,6 +317,10 @@ export const nakshatraInfo = [
       { range: '10°00′–13°20′ Cancer', navamsa: 'Libra', keywords: 'Balanced nurturing', traits: ['Diplomatic personality', 'Social responsibility', 'Harmonizing nature', 'Artistic sensitivity', 'Relationship-focused caregiving'] },
       { range: '13°20′–16°40′ Cancer', navamsa: 'Scorpio', keywords: 'Deep emotional care', traits: ['Emotional intensity', 'Protective instincts', 'Psychological understanding', 'Strong loyalty', 'Transformational nurturing'] },
     ],
+    "lightest_traits": ["Caring", "Supportive"],
+    "main_strengths": ["Disciplined", "Moral", "Dependable"],
+    "main_weaknesses": ["Over-dependence", "Emotional suppression"],
+    "darkest_traits": ["Passive-aggressiveness", "Rigidity"]
   },
   {
     number: 9,
@@ -323,6 +355,10 @@ export const nakshatraInfo = [
       { range: '23°20′–26°40′ Cancer', navamsa: 'Aquarius', keywords: 'Intellectual intuition', traits: ['Innovative thinking', 'Interest in science or research', 'Independent mindset', 'Social awareness', 'Analytical intuition'] },
       { range: '26°40′–30°00′ Cancer', navamsa: 'Pisces', keywords: 'Mystical sensitivity', traits: ['Strong intuition', 'Emotional depth', 'Spiritual interest', 'Imagination', 'Healing ability'] },
     ],
+    "lightest_traits": ["Intuition", "Strategic clarity"],
+    "main_strengths": ["Persuasive", "Insightful"],
+    "main_weaknesses": ["Manipulation", "Secretive"],
+    "darkest_traits": ["Deceit", "Entangling others"]
   },
   {
     number: 10,
@@ -357,6 +393,10 @@ export const nakshatraInfo = [
       { range: '6°40′–10°00′ Leo', navamsa: 'Gemini', keywords: 'Intellectual leadership', traits: ['Communication ability', 'Teaching or advising nature', 'Social intelligence', 'Curiosity about history or culture', 'Adaptable personality'] },
       { range: '10°00′–13°20′ Leo', navamsa: 'Cancer', keywords: 'Protective authority', traits: ['Strong family attachment', 'Emotional leadership', 'Protective personality', 'Caring nature', 'Respect for tradition'] },
     ],
+    "lightest_traits": ["Noble leadership"],
+    "main_strengths": ["Respect for tradition", "Empowering"],
+    "main_weaknesses": ["Pride", "Status attachment"],
+    "darkest_traits": ["Arrogance", "Exploiting others"]
   },
   {
     number: 11,
@@ -391,6 +431,10 @@ export const nakshatraInfo = [
       { range: '20°00′–23°20′ Leo', navamsa: 'Libra', keywords: 'Relationship harmony', traits: ['Strong partnership focus', 'Diplomacy and charm', 'Artistic sensitivity', 'Social intelligence', 'Love for balance and beauty'] },
       { range: '23°20′–26°40′ Leo', navamsa: 'Scorpio', keywords: 'Passionate creativity', traits: ['Emotional intensity', 'Passion in relationships', 'Deep creativity', 'Strong attraction energy', 'Transformational experiences in love'] },
     ],
+    "lightest_traits": ["Joy", "Creativity"],
+    "main_strengths": ["Sociable", "Charming", "Harmonious"],
+    "main_weaknesses": ["Laziness", "Over-indulgence"],
+    "darkest_traits": ["Hedonism", "Selfishness"]
   },
   {
     number: 12,
@@ -425,6 +469,10 @@ export const nakshatraInfo = [
       { range: '3°20′–6°40′ Virgo', navamsa: 'Aquarius', keywords: 'Social responsibility', traits: ['Humanitarian mindset', 'Logical thinking', 'Interest in social systems', 'Independent ideas', 'Cooperative nature'] },
       { range: '6°40′–10°00′ Virgo', navamsa: 'Pisces', keywords: 'Compassionate service', traits: ['Kind and helpful personality', 'Emotional sensitivity', 'Spiritual service mindset', 'Imagination', 'Gentle nature'] },
     ],
+    "lightest_traits": ["Loyalty", "Service"],
+    "main_strengths": ["Collaborative", "Responsible"],
+    "main_weaknesses": ["Over-commitment", "Dependence"],
+    "darkest_traits": ["Over-controlling", "Moral rigidity"]
   },
   {
     number: 13,
@@ -459,6 +507,10 @@ export const nakshatraInfo = [
       { range: '16°40′–20°00′ Virgo', navamsa: 'Gemini', keywords: 'Communicative skill', traits: ['Strong communication ability', 'Teaching or writing skills', 'Clever personality', 'Adaptable thinking', 'Social intelligence'] },
       { range: '20°00′–23°20′ Virgo', navamsa: 'Cancer', keywords: 'Healing touch', traits: ['Caring personality', 'Emotional sensitivity', 'Healing ability', 'Protective nature', 'Intuitive creativity'] },
     ],
+    "lightest_traits": ["Skillfulness", "Helpful"],
+    "main_strengths": ["Resourceful", "Clever"],
+    "main_weaknesses": ["Manipulative", "Anxious"],
+    "darkest_traits": ["Deceptive", "Control-seeking"]
   },
   {
     number: 14,
@@ -493,6 +545,10 @@ export const nakshatraInfo = [
       { range: '0°00′–3°20′ Libra', navamsa: 'Libra', keywords: 'Artistic harmony', traits: ['Love for beauty and balance', 'Social charm', 'Artistic talent', 'Diplomatic personality', 'Design sense'] },
       { range: '3°20′–6°40′ Libra', navamsa: 'Scorpio', keywords: 'Intense creation', traits: ['Deep creativity', 'Emotional intensity', 'Transformational artistic expression', 'Strong willpower', 'Psychological insight'] },
     ],
+    "lightest_traits": ["Artistic brilliance"],
+    "main_strengths": ["Visionary", "Ambitious", "Charismatic"],
+    "main_weaknesses": ["Vanity", "Perfectionism"],
+    "darkest_traits": ["Ego conflicts", "Charm used deceptively"]
   },
   {
     number: 15,
@@ -527,6 +583,10 @@ export const nakshatraInfo = [
       { range: '13°20′–16°40′ Libra', navamsa: 'Aquarius', keywords: 'Innovative independence', traits: ['Original thinking', 'Social awareness', 'Interest in science or technology', 'Independent ideas', 'Humanitarian mindset'] },
       { range: '16°40′–20°00′ Libra', navamsa: 'Pisces', keywords: 'Spiritual freedom', traits: ['Imagination', 'Emotional sensitivity', 'Compassion', 'Spiritual interest', 'Creative thinking'] },
     ],
+    "lightest_traits": ["Flexibility", "Diplomacy"],
+    "main_strengths": ["Independent", "Adaptable"],
+    "main_weaknesses": ["Indecisive", "Unstable"],
+    "darkest_traits": ["Avoidance", "Emotional detachment"]
   },
   {
     number: 16,
@@ -561,6 +621,10 @@ export const nakshatraInfo = [
       { range: '26°40′–30°00′ Libra', navamsa: 'Gemini', keywords: 'Strategic focus', traits: ['Intelligent planning', 'Communication ability', 'Adaptability', 'Social intelligence', 'Learning through experience'] },
       { range: '0°00′–3°20′ Scorpio', navamsa: 'Cancer', keywords: 'Emotional determination', traits: ['Emotional strength', 'Protective ambition', 'Intuitive decision-making', 'Strong attachment to goals', 'Deep motivation'] },
     ],
+    "lightest_traits": ["Ambition", "Focus"],
+    "main_strengths": ["Goal-driven", "Inspiring"],
+    "main_weaknesses": ["Obsession", "Competitiveness"],
+    "darkest_traits": ["Extreme ambition", "Impulsive"]
   },
   {
     number: 17,
@@ -595,6 +659,10 @@ export const nakshatraInfo = [
       { range: '10°00′–13°20′ Scorpio', navamsa: 'Libra', keywords: 'Harmonious friendship', traits: ['Diplomatic personality', 'Strong relationship awareness', 'Social intelligence', 'Artistic sensitivity', 'Cooperative mindset'] },
       { range: '13°20′–16°40′ Scorpio', navamsa: 'Scorpio', keywords: 'Deep devotion', traits: ['Emotional intensity', 'Strong loyalty', 'Transformational relationships', 'Psychological depth', 'Determined personality'] },
     ],
+    "lightest_traits": ["Loyalty", "Friendship"],
+    "main_strengths": ["Compassionate", "Cooperative"],
+    "main_weaknesses": ["Emotional dependency", "Oversensitivity"],
+    "darkest_traits": ["Toxic jealousy", "Hidden resentments"]
   },
   {
     number: 18,
@@ -629,6 +697,10 @@ export const nakshatraInfo = [
       { range: '23°20′–26°40′ Scorpio', navamsa: 'Aquarius', keywords: 'Strategic intelligence', traits: ['Analytical thinking', 'Innovative ideas', 'Social awareness', 'Independent mindset', 'Planning ability'] },
       { range: '26°40′–30°00′ Scorpio', navamsa: 'Pisces', keywords: 'Compassionate authority', traits: ['Emotional sensitivity', 'Spiritual awareness', 'Protective instincts', 'Imagination', 'Gentle leadership'] },
     ],
+    "lightest_traits": ["Protective wisdom"],
+    "main_strengths": ["Courageous", "Strategic", "Influential"],
+    "main_weaknesses": ["Suspicion", "Dominance"],
+    "darkest_traits": ["Ruthless", "Paranoia"]
   },
   {
     number: 19,
@@ -663,6 +735,10 @@ export const nakshatraInfo = [
       { range: '6°40′–10°00′ Sagittarius', navamsa: 'Gemini', keywords: 'Intellectual investigation', traits: ['Analytical mind', 'Curiosity about hidden knowledge', 'Communication ability', 'Research mindset', 'Adaptability'] },
       { range: '10°00′–13°20′ Sagittarius', navamsa: 'Cancer', keywords: 'Emotional transformation', traits: ['Emotional sensitivity', 'Intuition', 'Spiritual depth', 'Compassion', 'Healing ability'] },
     ],
+    "lightest_traits": ["Transformative insight"],
+    "main_strengths": ["Fearless", "Resilient", "Investigative"],
+    "main_weaknesses": ["Destructive tendencies"],
+    "darkest_traits": ["Obsessive destruction", "Volatility"]
   },
   {
     number: 20,
@@ -697,6 +773,10 @@ export const nakshatraInfo = [
       { range: '20°00′–23°20′ Sagittarius', navamsa: 'Libra', keywords: 'Social inspiration', traits: ['Diplomatic personality', 'Artistic sensitivity', 'Relationship awareness', 'Cooperative nature', 'Social charm'] },
       { range: '23°20′–26°40′ Sagittarius', navamsa: 'Scorpio', keywords: 'Emotional strength', traits: ['Emotional intensity', 'Strong willpower', 'Determination', 'Transformational experiences', 'Deep passion'] },
     ],
+    "lightest_traits": ["Optimism", "Principled action"],
+    "main_strengths": ["Courageous", "Adventurous"],
+    "main_weaknesses": ["Stubbornness", "Overconfidence"],
+    "darkest_traits": ["Imposing beliefs", "Conflict-prone"]
   },
   {
     number: 21,
@@ -731,6 +811,10 @@ export const nakshatraInfo = [
       { range: '3°20′–6°40′ Capricorn', navamsa: 'Aquarius', keywords: 'Social responsibility', traits: ['Humanitarian mindset', 'Logical thinking', 'Interest in social systems', 'Cooperative nature', 'Independent ideas'] },
       { range: '6°40′–10°00′ Capricorn', navamsa: 'Pisces', keywords: 'Compassionate authority', traits: ['Emotional sensitivity', 'Spiritual interest', 'Gentle leadership', 'Imagination', 'Kind personality'] },
     ],
+    "lightest_traits": ["Integrity", "Reliability"],
+    "main_strengths": ["Disciplined", "Visionary"],
+    "main_weaknesses": ["Rigidity", "Moral superiority"],
+    "darkest_traits": ["Cold detachment", "Difficulty adapting"]
   },
   {
     number: 22,
@@ -765,6 +849,10 @@ export const nakshatraInfo = [
       { range: '16°40′–20°00′ Capricorn', navamsa: 'Gemini', keywords: 'Communication and learning', traits: ['Strong speaking ability', 'Writing or teaching skills', 'Adaptability', 'Social intelligence', 'Curiosity'] },
       { range: '20°00′–23°20′ Capricorn', navamsa: 'Cancer', keywords: 'Emotional understanding', traits: ['Empathy', 'Emotional intelligence', 'Caring personality', 'Intuition', 'Spiritual sensitivity'] },
     ],
+    "lightest_traits": ["Wisdom", "Listening"],
+    "main_strengths": ["Knowledgeable", "Respectful"],
+    "main_weaknesses": ["Over-concern with reputation"],
+    "darkest_traits": ["Gossip", "Lack of independence"]
   },
   {
     number: 23,
@@ -799,6 +887,10 @@ export const nakshatraInfo = [
       { range: '0°00′–3°20′ Aquarius', navamsa: 'Libra', keywords: 'Social harmony', traits: ['Diplomatic personality', 'Teamwork ability', 'Artistic sensitivity', 'Balanced thinking', 'Cooperative nature'] },
       { range: '3°20′–6°40′ Aquarius', navamsa: 'Scorpio', keywords: 'Intense ambition', traits: ['Strong willpower', 'Emotional intensity', 'Determination', 'Deep motivation', 'Transformational experiences'] },
     ],
+    "lightest_traits": ["Resourcefulness", "Social grace"],
+    "main_strengths": ["Ambitious", "Cooperative"],
+    "main_weaknesses": ["Material obsession", "Detachment"],
+    "darkest_traits": ["Workaholism", "Emotional unavailability"]
   },
   {
     number: 24,
@@ -833,6 +925,10 @@ export const nakshatraInfo = [
       { range: '13°20′–16°40′ Aquarius', navamsa: 'Aquarius', keywords: 'Innovation and discovery', traits: ['Original thinking', 'Interest in technology', 'Humanitarian mindset', 'Analytical personality', 'Independence'] },
       { range: '16°40′–20°00′ Aquarius', navamsa: 'Pisces', keywords: 'Spiritual healing', traits: ['Compassionate personality', 'Intuition', 'Emotional depth', 'Spiritual interest', 'Imagination'] },
     ],
+    "lightest_traits": ["Healing", "Analytical"],
+    "main_strengths": ["Innovative", "Independent"],
+    "main_weaknesses": ["Isolation", "Coldness"],
+    "darkest_traits": ["Obsessive secrecy", "Emotional detachment"]
   },
   {
     number: 25,
@@ -867,6 +963,10 @@ export const nakshatraInfo = [
       { range: '26°40′–30°00′ Aquarius', navamsa: 'Gemini', keywords: 'Philosophical communication', traits: ['Communication ability', 'Intellectual curiosity', 'Teaching nature', 'Adaptability', 'Analytical thinking'] },
       { range: '0°00′–3°20′ Pisces', navamsa: 'Cancer', keywords: 'Emotional spirituality', traits: ['Compassionate personality', 'Strong intuition', 'Emotional depth', 'Spiritual sensitivity', 'Caring nature'] },
     ],
+    "lightest_traits": ["Spiritual vision"],
+    "main_strengths": ["Passionate", "Transformative"],
+    "main_weaknesses": ["Extremism", "Mood swings"],
+    "darkest_traits": ["Ruthless", "Harsh outlook"]
   },
   {
     number: 26,
@@ -901,6 +1001,10 @@ export const nakshatraInfo = [
       { range: '10°00′–13°20′ Pisces', navamsa: 'Libra', keywords: 'Harmonious wisdom', traits: ['Diplomatic personality', 'Social understanding', 'Emotional balance', 'Artistic sensitivity', 'Cooperative nature'] },
       { range: '13°20′–16°40′ Pisces', navamsa: 'Scorpio', keywords: 'Deep emotional wisdom', traits: ['Strong intuition', 'Emotional depth', 'Transformational experiences', 'Determination', 'Spiritual insight'] },
     ],
+    "lightest_traits": ["Patience", "Compassion"],
+    "main_strengths": ["Wise", "Grounded", "Enduring"],
+    "main_weaknesses": ["Pessimism", "Passivity"],
+    "darkest_traits": ["Emotional heaviness", "Stagnation"]
   },
   {
     number: 27,
@@ -935,5 +1039,9 @@ export const nakshatraInfo = [
       { range: '23°20′–26°40′ Pisces', navamsa: 'Aquarius', keywords: 'Humanitarian care', traits: ['Social awareness', 'Creativity', 'Independent thinking', 'Compassion for society', 'Innovative mindset'] },
       { range: '26°40′–30°00′ Pisces', navamsa: 'Pisces', keywords: 'Spiritual completion', traits: ['Deep compassion', 'Strong intuition', 'Spiritual awareness', 'Emotional sensitivity', 'Imagination'] },
     ],
+    "lightest_traits": ["Gentle nurturing"],
+    "main_strengths": ["Intuitive", "Protective", "Artistic"],
+    "main_weaknesses": ["Escapism", "Over-sensitivity"],
+    "darkest_traits": ["Vulnerable to manipulation", "Withdrawal"]
   },
 ];
