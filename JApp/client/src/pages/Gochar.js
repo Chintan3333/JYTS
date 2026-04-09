@@ -16,9 +16,13 @@ import {
   TableHead,
   TableRow,
   Tooltip,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import PublicIcon from '@mui/icons-material/Public';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { alpha } from '@mui/material/styles';
 import { calculateChart } from '../utils/chartCalculation';
 import { getPlanetNakshatraDetails, getNakshatraDetailsFromLongitude } from '../utils/nakshatraCalculation';
@@ -68,6 +72,105 @@ const getTextColor = (backgroundColor) => {
   return luminance > 0.5 ? '#000000' : '#ffffff';
 };
 
+const ZODIAC_SIGNS = [
+  'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
+  'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces',
+];
+
+const getZodiacNumber = (sign) => {
+  const zodiacMap = {
+    Aries: 1, Taurus: 2, Gemini: 3, Cancer: 4,
+    Leo: 5, Virgo: 6, Libra: 7, Scorpio: 8,
+    Sagittarius: 9, Capricorn: 10, Aquarius: 11, Pisces: 12,
+  };
+  return zodiacMap[sign] || 0;
+};
+
+const transitChartGridSx = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(5, 1fr)',
+  gap: 2,
+  mt: 2,
+  '& > div': {
+    position: 'relative',
+    minHeight: '120px',
+    p: 2,
+    borderRadius: 2,
+    border: (theme) => `1px solid ${theme.palette.divider}`,
+    backgroundColor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)'),
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+};
+
+function GocharHouseCell({ houseNum, housePositions, planets, planetNakshatraDetails }) {
+  const idx = houseNum - 1;
+  return (
+    <Box>
+      <Typography variant="subtitle2" color="text.secondary">
+        House {houseNum}
+      </Typography>
+      <Typography variant="body2">
+        {housePositions[idx] ?? ''}
+      </Typography>
+      <Box
+        sx={{
+          position: 'absolute',
+          bottom: 4,
+          display: 'flex',
+          gap: 1,
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          width: '100%',
+        }}
+      >
+        {Object.entries(planets).map(([planet, data]) => {
+          if (data.house !== houseNum) return null;
+          const bgColor = getPlanetColor(planet);
+          const textColor = getTextColor(bgColor);
+          const planetCap = planet.charAt(0).toUpperCase() + planet.slice(1);
+          const nakDetail = planetNakshatraDetails[planetCap];
+          return (
+            <Tooltip
+              key={planet}
+              title={
+                <>
+                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
+                  {nakDetail && (
+                    <>
+                      <br />
+                      <strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
+                    </>
+                  )}
+                </>
+              }
+              arrow
+              placement="top"
+            >
+              <Box
+                sx={{
+                  backgroundColor: bgColor,
+                  color: textColor,
+                  padding: '2px 4px',
+                  borderRadius: '4px',
+                  fontSize: '0.8rem',
+                  fontWeight: 'bold',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  cursor: 'help',
+                }}
+              >
+                {getPlanetAbbr(planet)}
+              </Box>
+            </Tooltip>
+          );
+        })}
+      </Box>
+    </Box>
+  );
+}
+
 function parseTzOffsetMinutes(tz) {
   const raw = String(tz || '').trim();
   const m = raw.match(/^([+-])(\d{1,2})(?::?(\d{2}))?$/);
@@ -108,6 +211,7 @@ function Gochar() {
   const [computedAt, setComputedAt] = useState('');
   const [ascendant, setAscendant] = useState(null);
   const [rows, setRows] = useState([]);
+  const [chartPlanets, setChartPlanets] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -136,6 +240,7 @@ function Gochar() {
 
     const { ascendant: asc, planets } = calculateChart(now.date, lat, lon);
     setAscendant(asc);
+    setChartPlanets(planets);
     setComputedAt(now.label);
 
     const ascLon = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'].indexOf(asc.sign) * 30 + Number(asc.degree || 0);
@@ -183,6 +288,38 @@ function Gochar() {
       { label: `Lon ${Number.isNaN(lon) ? formData.longitude : lon.toFixed(2)}°`, color: 'default' },
     ];
   }, [formData.latitude, formData.longitude, formData.timeZone]);
+
+  const planetNakshatraDetails = useMemo(() => {
+    const det = {};
+    rows.forEach((r) => {
+      if (r.isAsc) return;
+      det[r.name] = {
+        nakshatra: r.nakshatra,
+        pada: r.pada,
+        planetLongitude: r.longitude,
+      };
+    });
+    return det;
+  }, [rows]);
+
+  const housePositions = useMemo(() => {
+    if (!ascendant || !chartPlanets) return null;
+    const arr = Array(12).fill(null);
+    arr[0] = getZodiacNumber(ascendant.sign);
+    Object.values(chartPlanets).forEach((data) => {
+      if (data.house && data.house > 0 && data.house <= 12) {
+        arr[data.house - 1] = getZodiacNumber(data.sign);
+      }
+    });
+    const ascendantIndex = ZODIAC_SIGNS.indexOf(ascendant.sign);
+    for (let i = 0; i < 12; i += 1) {
+      if (!arr[i]) {
+        const signIndex = (ascendantIndex + i) % 12;
+        arr[i] = signIndex + 1;
+      }
+    }
+    return arr;
+  }, [ascendant, chartPlanets]);
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -269,6 +406,122 @@ function Gochar() {
             />
           )}
         </Box>
+
+        {housePositions && chartPlanets && (
+          <Accordion
+            defaultExpanded
+            sx={{
+              mb: 3,
+              border: (theme) => `1px solid ${theme.palette.divider}`,
+              borderRadius: '8px !important',
+              '&:before': { display: 'none' },
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+            }}
+          >
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                Transit Vedic Kundli
+              </Typography>
+              <Chip label="House chart (D1)" size="small" sx={{ ml: 1 }} variant="outlined" />
+            </AccordionSummary>
+            <AccordionDetails sx={{ pt: 0 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                North Indian layout: same as celebrity birth chart — houses and planets for the computed transit time.
+              </Typography>
+              <Box sx={transitChartGridSx}>
+                <Box />
+                <GocharHouseCell
+                  houseNum={2}
+                  housePositions={housePositions}
+                  planets={chartPlanets}
+                  planetNakshatraDetails={planetNakshatraDetails}
+                />
+                <Box />
+                <GocharHouseCell
+                  houseNum={12}
+                  housePositions={housePositions}
+                  planets={chartPlanets}
+                  planetNakshatraDetails={planetNakshatraDetails}
+                />
+                <Box />
+
+                <GocharHouseCell
+                  houseNum={3}
+                  housePositions={housePositions}
+                  planets={chartPlanets}
+                  planetNakshatraDetails={planetNakshatraDetails}
+                />
+                <Box />
+                <GocharHouseCell
+                  houseNum={1}
+                  housePositions={housePositions}
+                  planets={chartPlanets}
+                  planetNakshatraDetails={planetNakshatraDetails}
+                />
+                <Box />
+                <GocharHouseCell
+                  houseNum={11}
+                  housePositions={housePositions}
+                  planets={chartPlanets}
+                  planetNakshatraDetails={planetNakshatraDetails}
+                />
+
+                <Box />
+                <GocharHouseCell
+                  houseNum={4}
+                  housePositions={housePositions}
+                  planets={chartPlanets}
+                  planetNakshatraDetails={planetNakshatraDetails}
+                />
+                <Box />
+                <GocharHouseCell
+                  houseNum={10}
+                  housePositions={housePositions}
+                  planets={chartPlanets}
+                  planetNakshatraDetails={planetNakshatraDetails}
+                />
+                <Box />
+
+                <GocharHouseCell
+                  houseNum={5}
+                  housePositions={housePositions}
+                  planets={chartPlanets}
+                  planetNakshatraDetails={planetNakshatraDetails}
+                />
+                <Box />
+                <GocharHouseCell
+                  houseNum={7}
+                  housePositions={housePositions}
+                  planets={chartPlanets}
+                  planetNakshatraDetails={planetNakshatraDetails}
+                />
+                <Box />
+                <GocharHouseCell
+                  houseNum={9}
+                  housePositions={housePositions}
+                  planets={chartPlanets}
+                  planetNakshatraDetails={planetNakshatraDetails}
+                />
+
+                <Box />
+                <GocharHouseCell
+                  houseNum={6}
+                  housePositions={housePositions}
+                  planets={chartPlanets}
+                  planetNakshatraDetails={planetNakshatraDetails}
+                />
+                <Box />
+                <GocharHouseCell
+                  houseNum={8}
+                  housePositions={housePositions}
+                  planets={chartPlanets}
+                  planetNakshatraDetails={planetNakshatraDetails}
+                />
+                <Box />
+              </Box>
+            </AccordionDetails>
+          </Accordion>
+        )}
 
         <TableContainer component={Paper} elevation={0} sx={{ border: (theme) => `1px solid ${theme.palette.divider}` }}>
           <Table size="small">
