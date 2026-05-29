@@ -1,7 +1,7 @@
 {
   "name": "celebrity-kundli-backend",
   "version": "1.0.0",
-  "description": "Backend for Celebrity Vedic Kundli Database",
+  "description": "Backend for JYTS Astro",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

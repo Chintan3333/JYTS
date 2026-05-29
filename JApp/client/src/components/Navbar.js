@@ -168,7 +168,7 @@ function Navbar({ onToggleTheme, mode }) {
               fontSize: { xs: '1.1rem', sm: '1.25rem' },
             }}
           >
-            Celebrity Kundli
+            JYTS Astro
           </Typography>
 
           {isMobile ? (

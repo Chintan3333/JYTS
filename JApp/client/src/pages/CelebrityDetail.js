@@ -33,7 +33,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EditIcon from '@mui/icons-material/Edit';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { alpha } from '@mui/material/styles';
-import { EclipticGeoMoon, EclipticLongitude, Ecliptic, GeoVector, Body, SearchMoonNode, GeoMoon } from 'astronomy-engine';
+import { EclipticGeoMoon, EclipticLongitude, Ecliptic, GeoVector, Body, SearchMoonNode, GeoMoon, Observer, SearchRiseSet, Equator } from 'astronomy-engine';
 
 // Helper function to get zodiac sign number
 const getZodiacNumber = (sign) => {
@@ -139,6 +139,460 @@ const isSeventhAspect = (planet1Sign, planet2Sign) => {
 
   // 7th aspect means 6 signs away (7th sign from the current sign)
   return Math.abs(sign1Index - sign2Index) === 6;
+};
+
+// ----------------------------
+// Sthan Bala (Positional Strength)
+// Method based on: Sthan bal.txt
+// Components: Uchcha + Saptavargaja + Ojayugma + Kendradi + Drekkana
+// ----------------------------
+
+const SIGN_LORDS = {
+  Aries: 'mars',
+  Taurus: 'venus',
+  Gemini: 'mercury',
+  Cancer: 'moon',
+  Leo: 'sun',
+  Virgo: 'mercury',
+  Libra: 'venus',
+  Scorpio: 'mars',
+  Sagittarius: 'jupiter',
+  Capricorn: 'saturn',
+  Aquarius: 'saturn',
+  Pisces: 'jupiter',
+};
+
+const EXALTATION_POINTS = {
+  sun: { sign: 'Aries', deg: 10 },
+  moon: { sign: 'Taurus', deg: 3 },
+  mars: { sign: 'Capricorn', deg: 28 },
+  mercury: { sign: 'Virgo', deg: 15 },
+  jupiter: { sign: 'Cancer', deg: 5 },
+  venus: { sign: 'Pisces', deg: 27 },
+  saturn: { sign: 'Libra', deg: 20 },
+};
+
+const DEBILITATION_POINTS = {
+  sun: { sign: 'Libra', deg: 10 },
+  moon: { sign: 'Scorpio', deg: 3 },
+  mars: { sign: 'Cancer', deg: 28 },
+  mercury: { sign: 'Pisces', deg: 15 },
+  jupiter: { sign: 'Capricorn', deg: 5 },
+  venus: { sign: 'Virgo', deg: 27 },
+  saturn: { sign: 'Aries', deg: 20 },
+};
+
+// Mooltrikona sign assumptions (classic sign-level; degree ranges vary by school)
+const MOOLTRIKONA_SIGN = {
+  sun: 'Leo',
+  moon: 'Taurus',
+  mars: 'Aries',
+  mercury: 'Virgo',
+  jupiter: 'Sagittarius',
+  venus: 'Libra',
+  saturn: 'Aquarius',
+};
+
+const OWN_SIGNS = {
+  sun: ['Leo'],
+  moon: ['Cancer'],
+  mars: ['Aries', 'Scorpio'],
+  mercury: ['Gemini', 'Virgo'],
+  jupiter: ['Sagittarius', 'Pisces'],
+  venus: ['Taurus', 'Libra'],
+  saturn: ['Capricorn', 'Aquarius'],
+};
+
+const NATURAL_FRIENDSHIP = {
+  sun: { friends: ['moon', 'mars', 'jupiter'], neutral: ['mercury'], enemies: ['venus', 'saturn'] },
+  moon: { friends: ['sun', 'mercury'], neutral: ['mars', 'jupiter', 'venus', 'saturn'], enemies: [] },
+  mars: { friends: ['sun', 'moon', 'jupiter'], neutral: ['venus', 'saturn'], enemies: ['mercury'] },
+  mercury: { friends: ['sun', 'venus'], neutral: ['mars', 'jupiter', 'saturn'], enemies: ['moon'] },
+  jupiter: { friends: ['sun', 'moon', 'mars'], neutral: ['saturn'], enemies: ['mercury', 'venus'] },
+  venus: { friends: ['mercury', 'saturn'], neutral: ['mars', 'jupiter'], enemies: ['sun', 'moon'] },
+  saturn: { friends: ['mercury', 'venus'], neutral: ['jupiter'], enemies: ['sun', 'moon', 'mars'] },
+};
+
+const isOddSign = (sign) => {
+  const idx = zodiac.indexOf(sign);
+  return [0, 2, 4, 6, 8, 10].includes(idx); // Aries(0) is odd
+};
+
+const getAbsoluteDeg = (sign, deg) => (zodiac.indexOf(sign) * 30) + Number(deg || 0);
+
+const angularDistance0to180 = (deg1, deg2) => {
+  const a = (Number(deg1) % 360 + 360) % 360;
+  const b = (Number(deg2) % 360 + 360) % 360;
+  let d = Math.abs(a - b);
+  if (d > 180) d = 360 - d;
+  return d;
+};
+
+const zodiacalDistanceForward0to360 = (fromDeg, toDeg) => {
+  const a = (Number(fromDeg) % 360 + 360) % 360;
+  const b = (Number(toDeg) % 360 + 360) % 360;
+  return (b - a + 360) % 360;
+};
+
+const uchchaBala = (planetKey, sign, deg) => {
+  const deb = DEBILITATION_POINTS[planetKey];
+  if (!deb) return 0;
+  const planetLon = getAbsoluteDeg(sign, deg);
+  const debLon = getAbsoluteDeg(deb.sign, deb.deg);
+  const dist = angularDistance0to180(planetLon, debLon); // 0..180
+  return (dist / 180) * 60;
+};
+
+const kendradiBala = (house) => {
+  if (!house) return 0;
+  if ([1, 4, 7, 10].includes(house)) return 60;
+  if ([2, 5, 8, 11].includes(house)) return 30;
+  if ([3, 6, 9, 12].includes(house)) return 15;
+  return 0;
+};
+
+const ojayugmaBala = (planetKey, sign , d9sign) => {
+  const maleOrNeutral = ['sun', 'mars', 'jupiter', 'mercury', 'saturn'];
+  const female = ['moon', 'venus'];
+  if (maleOrNeutral.includes(planetKey)) return isOddSign(sign) ? isOddSign(d9sign)? 30:15 : isOddSign(d9sign)?15:0;
+  if (female.includes(planetKey)) return isOddSign(sign) ?isOddSign(d9sign)? 0:15 : isOddSign(d9sign)?15:30;
+  return 0;
+};
+
+const drekkanaBala = (planetKey, deg) => {
+  const d = Number(deg || 0);
+  const drekkana = d < 10 ? 1 : d < 20 ? 2 : 3;
+
+  const male = ['sun', 'mars', 'jupiter'];
+  const female = ['moon', 'venus'];
+  const neutral = ['mercury', 'saturn'];
+
+  const strong =
+    (male.includes(planetKey) && drekkana === 1) ||
+    (neutral.includes(planetKey) && drekkana === 2) ||
+    (female.includes(planetKey) && drekkana === 3);
+
+  return strong ? 15 : 0;
+};
+
+const digbalaWeakestCuspOffsetDeg = {
+  sun: 90,     // 4th cusp (IC)
+  mars: 90,    // 4th cusp (IC)
+  moon: 270,   // 10th cusp (MC)
+  venus: 270,  // 10th cusp (MC)
+  jupiter: 180,// 7th cusp (Desc)
+  mercury: 180,// 7th cusp (Desc)
+  saturn: 0,   // 1st cusp (Asc)
+};
+
+const digBala = (planetKey, planetLon, ascLon) => {
+  const offset = digbalaWeakestCuspOffsetDeg[planetKey];
+  if (offset === undefined) return { value: 0, distance: 0, weakestLon: ascLon };
+  const weakestLon = (Number(ascLon) + offset) % 360;
+  let dist = zodiacalDistanceForward0to360(weakestLon, planetLon); // 0..360
+  if (dist > 180) dist = 360 - dist; // usable max 180°
+  const value = (dist / 180) * 60;
+  return { value, distance: dist, weakestLon };
+};
+
+// ----------------------------
+// Kaal Bala (Temporal Strength) — Kaal bal.txt
+// Components: Natonnata + Paksha + Tribhaga + Varsha + Masa + Dina + Hora + Ayana + Yuddha
+// ----------------------------
+
+const KAAL_PLANETS = ['sun', 'moon', 'mars', 'mercury', 'jupiter', 'venus', 'saturn'];
+const HORA_SEQUENCE = ['sun', 'venus', 'mercury', 'moon', 'saturn', 'jupiter', 'mars'];
+const WEEKDAY_LORDS = ['sun', 'moon', 'mars', 'mercury', 'jupiter', 'venus', 'saturn'];
+const AYANA_OBLIQUITY = 23 + 27 / 60; // 23°27'
+const AYANA_RANGE = 46 + 54 / 60; // 46°54'
+const BODY_BY_PLANET = {
+  sun: Body.Sun,
+  moon: Body.Moon,
+  mars: Body.Mars,
+  mercury: Body.Mercury,
+  jupiter: Body.Jupiter,
+  venus: Body.Venus,
+  saturn: Body.Saturn,
+};
+
+// 60 Samvatsara year lords (Prabhava → …)
+const SAMVATSARA_LORDS = [
+  'jupiter', 'venus', 'mars', 'mercury', 'jupiter', 'venus', 'mars', 'mercury',
+  'moon', 'saturn', 'jupiter', 'venus', 'mars', 'mercury', 'jupiter', 'venus',
+  'mars', 'mercury', 'moon', 'saturn', 'jupiter', 'venus', 'mars', 'mercury',
+  'jupiter', 'venus', 'mars', 'mercury', 'moon', 'saturn', 'jupiter', 'venus',
+  'mars', 'mercury', 'jupiter', 'venus', 'mars', 'mercury', 'moon', 'saturn',
+  'jupiter', 'venus', 'mars', 'mercury', 'jupiter', 'venus', 'mars', 'mercury',
+  'moon', 'saturn', 'jupiter', 'venus', 'mars', 'mercury', 'jupiter', 'venus',
+  'mars', 'mercury', 'moon', 'saturn',
+];
+
+const getSiderealLongitude = (date, planetCap) => {
+  const details = checkPlanetNakshatraDetails(date, planetCap);
+  return Number(details.planetLongitude);
+};
+
+const getPlanetDeclination = (date, planetKey, observer) => {
+  const body = BODY_BY_PLANET[planetKey];
+  if (!body) return 0;
+  const eq = Equator(body, date, observer, true, true);
+  return eq.dec;
+};
+
+const findSunriseSunset = (birthDate, observer) => {
+  const searchStart = new Date(birthDate);
+  searchStart.setUTCHours(0, 0, 0, 0);
+  const prevDay = new Date(searchStart.getTime() - 24 * 60 * 60 * 1000);
+
+  const sunrise = SearchRiseSet(Body.Sun, observer, +1, searchStart, 2);
+  const sunset = sunrise
+    ? SearchRiseSet(Body.Sun, observer, -1, sunrise.date, 1)
+    : null;
+  const prevSunset = SearchRiseSet(Body.Sun, observer, -1, prevDay, 2);
+
+  return {
+    sunrise: sunrise?.date || null,
+    sunset: sunset?.date || null,
+    prevSunset: prevSunset?.date || null,
+  };
+};
+
+const natonnataBala = (planetKey, birthMs, noonMs, midnightMs) => {
+  if (planetKey === 'mercury') return 60;
+  const halfDay = 12 * 60 * 60 * 1000;
+  const diurnal = ['sun', 'jupiter', 'venus'];
+  const nocturnal = ['moon', 'mars', 'saturn'];
+  if (diurnal.includes(planetKey)) {
+    return Math.max(0, Math.min(60, 60 * (1 - Math.abs(birthMs - noonMs) / halfDay)));
+  }
+  if (nocturnal.includes(planetKey)) {
+    return Math.max(0, Math.min(60, 60 * (1 - Math.abs(birthMs - midnightMs) / halfDay)));
+  }
+  return 0;
+};
+
+const pakshaBalaAll = (sunLon, moonLon) => {
+  let d = Math.abs(moonLon - sunLon);
+  if (d > 180) d = 360 - d;
+  const moonPaksha = d / 3;
+  const waxing = ((moonLon - sunLon + 360) % 360) < 180;
+  const out = { moon: moonPaksha, waxing };
+  KAAL_PLANETS.forEach((p) => {
+    if (p === 'moon') return;
+    if (p === 'mercury') {
+      out[p] = waxing ? moonPaksha : 60 - moonPaksha;
+      return;
+    }
+    const benefic = ['jupiter', 'venus'].includes(p);
+    const malefic = ['sun', 'mars', 'saturn'].includes(p);
+    if (benefic) out[p] = moonPaksha;
+    else if (malefic) out[p] = 60 - moonPaksha;
+    else out[p] = 0;
+  });
+  return out;
+};
+
+const tribhagaBala = (planetKey, birthMs, sunriseMs, sunsetMs, nightStartMs, nightEndMs) => {
+  if (planetKey === 'jupiter') return 60;
+  const isDay = birthMs >= sunriseMs && birthMs < sunsetMs;
+  const segmentMs = isDay
+    ? (sunsetMs - sunriseMs) / 3
+    : (nightEndMs - nightStartMs) / 3;
+  const offset = isDay ? birthMs - sunriseMs : birthMs - nightStartMs;
+  const segment = Math.min(2, Math.max(0, Math.floor(offset / segmentMs)));
+  const dayLords = ['mercury', 'sun', 'saturn'];
+  const nightLords = ['moon', 'venus', 'mars'];
+  const lord = isDay ? dayLords[segment] : nightLords[segment];
+  return lord === planetKey ? 60 : 0;
+};
+
+const horaLordAtBirth = (birthMs, sunriseMs, sunsetMs, nightStartMs, nightEndMs, weekdayIndex) => {
+  const isDay = birthMs >= sunriseMs && birthMs < sunsetMs;
+  const firstLord = WEEKDAY_LORDS[weekdayIndex];
+  const startIdx = HORA_SEQUENCE.indexOf(firstLord);
+  let horaIndex;
+  if (isDay) {
+    const horaLen = (sunsetMs - sunriseMs) / 12;
+    horaIndex = Math.min(11, Math.floor((birthMs - sunriseMs) / horaLen));
+  } else {
+    const horaLen = (nightEndMs - nightStartMs) / 12;
+    horaIndex = 12 + Math.min(11, Math.floor((birthMs - nightStartMs) / horaLen));
+  }
+  return HORA_SEQUENCE[(startIdx + horaIndex) % 7];
+};
+
+const ayanaBala = (planetKey, declination) => {
+  const dec = Number(declination);
+  if (planetKey === 'mercury') {
+    return Math.max(0, (60 * (AYANA_OBLIQUITY + Math.abs(dec))) / AYANA_RANGE);
+  }
+  if (['moon', 'saturn'].includes(planetKey)) {
+    if (dec >= 0) return (60 * (AYANA_OBLIQUITY + dec)) / AYANA_RANGE;
+    return (60 * (AYANA_OBLIQUITY - dec)) / AYANA_RANGE;
+  }
+  return (60 * (AYANA_OBLIQUITY + dec)) / AYANA_RANGE;
+};
+
+const computeYuddhaBala = (planetLongitudes) => {
+  const warPlanets = ['mars', 'mercury', 'jupiter', 'venus', 'saturn'];
+  const yuddha = {};
+  KAAL_PLANETS.forEach((p) => { yuddha[p] = 0; });
+
+  for (let i = 0; i < warPlanets.length; i++) {
+    for (let j = i + 1; j < warPlanets.length; j++) {
+      const p1 = warPlanets[i];
+      const p2 = warPlanets[j];
+      const lon1 = planetLongitudes[p1];
+      const lon2 = planetLongitudes[p2];
+      if (lon1 == null || lon2 == null) continue;
+      let sep = Math.abs(lon1 - lon2);
+      if (sep > 180) sep = 360 - sep;
+      if (sep > 1) continue;
+      const winner = lon1 > lon2 ? p1 : p2;
+      const loser = winner === p1 ? p2 : p1;
+      const gain = Math.min(60, sep * 30);
+      yuddha[winner] = (yuddha[winner] || 0) + gain;
+      yuddha[loser] = (yuddha[loser] || 0) - gain;
+    }
+  }
+  return yuddha;
+};
+
+const getSamvatsaraLord = (birthDate) => {
+  const y = birthDate.getUTCFullYear();
+  const index = ((y - 1987) % 60 + 60) % 60;
+  return SAMVATSARA_LORDS[index];
+};
+
+const calculateKaalBala = (celebrity, birthDate) => {
+  const lat = Number(celebrity.latitude) || 0;
+  const lon = Number(celebrity.longitude) || 0;
+  const observer = new Observer(lat, lon, 0);
+  const { sunrise, sunset, prevSunset } = findSunriseSunset(birthDate, observer);
+
+  const birthMs = birthDate.getTime();
+  const sunriseMs = sunrise?.getTime() ?? birthMs;
+  const sunsetMs = sunset?.getTime() ?? birthMs + 12 * 60 * 60 * 1000;
+  const nextSunrise = SearchRiseSet(Body.Sun, observer, +1, sunset || birthDate, 1);
+  const nextSunriseMs = nextSunrise?.date?.getTime() ?? sunriseMs + 24 * 60 * 60 * 1000;
+  const prevSunsetMs = prevSunset?.getTime() ?? sunriseMs - 12 * 60 * 60 * 1000;
+
+  const noonMs = (sunriseMs + sunsetMs) / 2;
+  const nightStartMs = birthMs < sunriseMs ? prevSunsetMs : sunsetMs;
+  const nightEndMs = birthMs < sunriseMs ? sunriseMs : nextSunriseMs;
+  const midnightMs = (nightStartMs + nightEndMs) / 2;
+
+  const sunLon = getSiderealLongitude(birthDate, 'Sun');
+  const moonLon = getSiderealLongitude(birthDate, 'Moon');
+  const paksha = pakshaBalaAll(sunLon, moonLon);
+
+  const weekdayIndex = birthDate.getUTCDay();
+  const dinaLord = WEEKDAY_LORDS[weekdayIndex];
+  const horaLord = horaLordAtBirth(birthMs, sunriseMs, sunsetMs, nightStartMs, nightEndMs, weekdayIndex);
+  const varshaLord = getSamvatsaraLord(birthDate);
+  const sunSign = celebrity.planets?.sun?.sign;
+  const masaLord = sunSign ? SIGN_LORDS[sunSign] : null;
+
+  const planetLongitudes = {};
+  KAAL_PLANETS.forEach((p) => {
+    const cap = p.charAt(0).toUpperCase() + p.slice(1);
+    planetLongitudes[p] = getSiderealLongitude(birthDate, cap);
+  });
+  const yuddha = computeYuddhaBala(planetLongitudes);
+
+  const byPlanet = {};
+  KAAL_PLANETS.forEach((planetKey) => {
+    const decl = getPlanetDeclination(birthDate, planetKey, observer);
+    const components = {
+      natonnata: natonnataBala(planetKey, birthMs, noonMs, midnightMs),
+      paksha: paksha[planetKey] ?? 0,
+      tribhaga: tribhagaBala(planetKey, birthMs, sunriseMs, sunsetMs, nightStartMs, nightEndMs),
+      varsha: planetKey === varshaLord ? 15 : 0,
+      masa: planetKey === masaLord ? 30 : 0,
+      dina: planetKey === dinaLord ? 45 : 0,
+      hora: planetKey === horaLord ? 60 : 0,
+      ayana: ayanaBala(planetKey, decl),
+      yuddha: yuddha[planetKey] ?? 0,
+    };
+    components.total = Object.values(components).reduce((s, v) => s + v, 0);
+    byPlanet[planetKey] = components;
+  });
+
+  return {
+    byPlanet,
+    meta: {
+      varshaLord,
+      masaLord,
+      dinaLord,
+      horaLord,
+      pakshaDegrees: (() => {
+        let d = Math.abs(moonLon - sunLon);
+        if (d > 180) d = 360 - d;
+        return d;
+      })(),
+      waxing: paksha.waxing,
+    },
+  };
+};
+
+const getNaturalRelation = (planetKey, otherPlanetKey) => {
+  const rel = NATURAL_FRIENDSHIP[planetKey];
+  if (!rel) return 'neutral';
+  if (rel.friends.includes(otherPlanetKey)) return 'friend';
+  if (rel.enemies.includes(otherPlanetKey)) return 'enemy';
+  return 'neutral';
+};
+
+const getTemporaryRelation = (planetHouse, otherHouse) => {
+  if (!planetHouse || !otherHouse) return 'neutral';
+  const diff = ((otherHouse - planetHouse) % 12 + 12) % 12; // 0..11
+  const relHouse = diff + 1; // 1..12 from planet
+  const tempFriends = [2, 3, 4, 10, 11, 12];
+  const tempEnemies = [1, 5, 6, 7, 8, 9];
+  if (tempFriends.includes(relHouse)) return 'friend';
+  if (tempEnemies.includes(relHouse)) return 'enemy';
+  return 'neutral';
+};
+
+const combineRelation = (naturalRel, temporaryRel) => {
+  // Natural + Temporary => Result (per Sthan bal.txt)
+  const key = `${naturalRel}-${temporaryRel}`;
+  if (key === 'friend-friend') return 'greatFriend';
+  if (key === 'friend-neutral') return 'friend';
+  if (key === 'neutral-friend') return 'friend';
+  if (key === 'enemy-friend') return 'neutral';
+  if (key === 'friend-enemy') return 'neutral';
+  if (key === 'neutral-neutral') return 'neutral';
+  if (key === 'enemy-neutral') return 'enemy';
+  if (key === 'neutral-enemy') return 'enemy';
+  if (key === 'enemy-enemy') return 'greatEnemy';
+  return 'neutral';
+};
+
+const dignityPoints = ({ planetKey, sign, planetHouse, planets }) => {
+  // Exalted / Mooltrikona / Own sign are absolute; else use combined friendship vs sign lord.
+  if (!sign) return { points: 0, dignity: 'Unknown' };
+
+  // const exalt = EXALTATION_POINTS[planetKey]?.sign === sign;
+  // if (exalt) return { points: 20, dignity: 'Exalted' };
+
+  if (MOOLTRIKONA_SIGN[planetKey] === sign) return { points: 45, dignity: 'Mooltrikona' };
+
+  if ((OWN_SIGNS[planetKey] || []).includes(sign)) return { points: 30, dignity: 'Own sign' };
+
+   const signLord = SIGN_LORDS[sign];
+  // if (!signLord || signLord === planetKey) return { points: 2.5, dignity: 'Neutral' };
+
+  const naturalRel = getNaturalRelation(planetKey, signLord);
+  const otherHouse = planets?.[signLord]?.house;
+  const tempRel = getTemporaryRelation(planetHouse, otherHouse);
+  const combined = combineRelation(naturalRel, tempRel);
+
+  if (combined === 'greatFriend') return { points: 22.5, dignity: 'Great friend' };
+  if (combined === 'friend') return { points: 15, dignity: 'Friend' };
+  if (combined === 'neutral') return { points: 7.5, dignity: 'Neutral' };
+  if (combined === 'enemy') return { points: 3.75, dignity: 'Enemy' };
+  return { points: 1.875, dignity: 'Great enemy' };
 };
 
 // Helper function to check if a planet is debilitated
@@ -1658,6 +2112,124 @@ function CelebrityDetail() {
     (p) => getHouseNumber(d9PlanetSigns[p], d9AscSign)
   );
 
+  // Divisional chart analysis (D1, D2..D60, incl. D9)
+  const divisionalAnalysisPlanetKeys = ['sun', 'moon', 'mars', 'mercury', 'jupiter', 'venus', 'saturn', 'rahu', 'ketu']
+    .filter((p) => celebrity?.planets?.[p]);
+
+  const divisionalChartKeysForAnalysis = ['D1', 'D2', 'D3', 'D4', 'D7', 'D9', 'D10', 'D12', 'D16', 'D20', 'D24', 'D27', 'D30', 'D60'];
+
+  const divisionalSignPlacementsByPlanet = (() => {
+    const out = {};
+    divisionalAnalysisPlanetKeys.forEach((planetKey) => {
+      const d1 = celebrity.planets[planetKey] || {};
+      const placements = {};
+      placements.D1 = d1.sign;
+      placements.D9 = d9PlanetSigns[planetKey];
+
+      Object.entries(DIVISIONAL_MAP_BY_KEY).forEach(([chartKey, mapFn]) => {
+        if (typeof mapFn !== 'function') return;
+        placements[chartKey] = mapFn(d1.sign, Number(d1.degree || 0));
+      });
+
+      out[planetKey] = placements;
+    });
+    return out;
+  })();
+
+  const divisionalSignFrequencyByPlanet = (() => {
+    const out = {};
+    divisionalAnalysisPlanetKeys.forEach((planetKey) => {
+      const placements = divisionalSignPlacementsByPlanet[planetKey] || {};
+      const freq = {};
+      divisionalChartKeysForAnalysis.forEach((chartKey) => {
+        const sign = placements[chartKey];
+        if (!sign) return;
+        freq[sign] = (freq[sign] || 0) + 1;
+      });
+      out[planetKey] = freq;
+    });
+    return out;
+  })();
+
+  // Sthan Bala (7 planets only: exclude Rahu/Ketu)
+  const sthanBalaPlanets = ['sun', 'moon', 'mars', 'mercury', 'jupiter', 'venus', 'saturn']
+    .filter((p) => celebrity?.planets?.[p]);
+
+  const saptavargaKeys = ['D1', 'D2', 'D3', 'D7', 'D9', 'D12', 'D30'];
+
+  const sthanBalaByPlanet = (() => {
+    const out = {};
+    sthanBalaPlanets.forEach((planetKey) => {
+      const d1 = celebrity.planets[planetKey];
+      const d1Sign = d1?.sign;
+      const d1Deg = Number(d1?.degree || 0);
+      const d1House = Number(d1?.house || 0);
+
+      // Signs in the 7 vargas
+      const vargaSign = {
+        D1: d1Sign,
+        D9: d9PlanetSigns[planetKey],
+      };
+      ['D2', 'D3', 'D7', 'D12', 'D30'].forEach((k) => {
+        const mapFn = DIVISIONAL_MAP_BY_KEY[k];
+        if (typeof mapFn === 'function') vargaSign[k] = mapFn(d1Sign, d1Deg);
+      });
+
+      const saptavargaja = saptavargaKeys.reduce((sum, k) => {
+        const { points } = dignityPoints({
+          planetKey,
+          sign: vargaSign[k],
+          planetHouse: d1House,
+          planets: celebrity.planets,
+        });
+        return sum + points;
+      }, 0);
+
+      const u = uchchaBala(planetKey, d1Sign, d1Deg);
+      const o = ojayugmaBala(planetKey, d1Sign, d9PlanetSigns[planetKey]);
+      const k = kendradiBala(d1House);
+      const drek = drekkanaBala(planetKey, d1Deg);
+      const total = u + saptavargaja + o + k + drek;
+
+      out[planetKey] = {
+        uchcha: u,
+        saptavargaja,
+        ojayugma: o,
+        kendradi: k,
+        drekkana: drek,
+        total,
+        vargaSign,
+        vargaDignity: Object.fromEntries(
+          saptavargaKeys.map((vk) => {
+            const res = dignityPoints({
+              planetKey,
+              sign: vargaSign[vk],
+              planetHouse: d1House,
+              planets: celebrity.planets,
+            });
+            return [vk, res];
+          })
+        ),
+      };
+    });
+    return out;
+  })();
+
+  // Dig Bala (Directional strength) — computed from weakest cusp to planet longitude (Equal-house cusps from Asc degree).
+  const digBalaByPlanet = (() => {
+    const out = {};
+    const ascLon = getLongitudeFromSignDegree(celebrity.ascendant.sign, Number(celebrity.ascendant.degree || 0));
+    sthanBalaPlanets.forEach((planetKey) => {
+      const d1 = celebrity.planets[planetKey];
+      const planetLon = getLongitudeFromSignDegree(d1.sign, Number(d1.degree || 0));
+      out[planetKey] = digBala(planetKey, planetLon, ascLon);
+    });
+    return out;
+  })();
+
+  const birthDateTime = new Date(`${celebrity.birthDate.split('T')[0]}T${celebrity.birthTime}:00${celebrity.timeZone}`);
+  const kaalBalaResult = calculateKaalBala(celebrity, birthDateTime);
+
   // Chandra Kundali (Moon chart): Moon becomes 1st house
   const moonAscSign = celebrity.planets.moon?.sign || celebrity.ascendant.sign;
   const moonHouseSigns = Array.from({ length: 12 }, (_, i) => getSignForHouse(i + 1, moonAscSign));
@@ -2677,6 +3249,384 @@ function CelebrityDetail() {
                     );
                   })}
                 </Grid>
+              </AccordionDetails>
+            </Accordion>
+          </Grid>
+
+          {/* Divisional chart analysis */}
+          <Grid item xs={12}>
+            <Accordion
+              defaultExpanded={false}
+              sx={{
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                borderRadius: '8px !important',
+                '&:before': { display: 'none' },
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+              }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Divisional Chart Analysis
+                </Typography>
+                <Chip label="D1–D60" size="small" sx={{ ml: 1 }} variant="outlined" />
+              </AccordionSummary>
+              <AccordionDetails sx={{ pt: 0 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  For each planet, this counts how many times it lands in each sign across {divisionalChartKeysForAnalysis.join(', ')}.
+                </Typography>
+
+                <TableContainer component={Paper} elevation={0} sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow sx={{ backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)' }}>
+                        <TableCell sx={{ fontWeight: 700 }}>Planet</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Sign frequency (14 charts)</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {divisionalAnalysisPlanetKeys.map((planetKey) => {
+                        const freq = divisionalSignFrequencyByPlanet[planetKey] || {};
+                        const placements = divisionalSignPlacementsByPlanet[planetKey] || {};
+                        const sorted = Object.entries(freq)
+                          .sort((a, b) => b[1] - a[1] || zodiacSigns.indexOf(a[0]) - zodiacSigns.indexOf(b[0]));
+
+                        const tooltipLines = divisionalChartKeysForAnalysis
+                          .map((k) => `${k}: ${placements[k] || '—'}`)
+                          .join('\n');
+
+                        return (
+                          <TableRow key={`div-ana-${planetKey}`} hover>
+                            <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Box
+                                  sx={{
+                                    width: 28,
+                                    height: 28,
+                                    borderRadius: '50%',
+                                    backgroundColor: getPlanetColor(planetKey),
+                                    color: getTextColor(getPlanetColor(planetKey)),
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontWeight: 800,
+                                    fontSize: '0.75rem',
+                                  }}
+                                >
+                                  {getPlanetAbbr(planetKey)}
+                                </Box>
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                  {toPlanetLabel(planetKey)}
+                                </Typography>
+                              </Box>
+                            </TableCell>
+                            <TableCell>
+                              <Tooltip title={<span style={{ whiteSpace: 'pre-line' }}>{tooltipLines}</span>} arrow placement="top">
+                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                  {sorted.length === 0 ? (
+                                    <Typography variant="body2" color="text.secondary">
+                                      —
+                                    </Typography>
+                                  ) : (
+                                    sorted.map(([sign, count]) => (
+                                      <Chip
+                                        key={`${planetKey}-${sign}`}
+                                        label={`${sign}: ${count}`}
+                                        size="small"
+                                        variant="outlined"
+                                        sx={{ fontWeight: 600 }}
+                                      />
+                                    ))
+                                  )}
+                                </Box>
+                              </Tooltip>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </AccordionDetails>
+            </Accordion>
+          </Grid>
+
+          {/* Sthan Bala */}
+          <Grid item xs={12}>
+            <Accordion
+              defaultExpanded={false}
+              sx={{
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                borderRadius: '8px !important',
+                '&:before': { display: 'none' },
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+              }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Sthan Bala
+                </Typography>
+                <Chip label="7 planets" size="small" sx={{ ml: 1 }} variant="outlined" />
+              </AccordionSummary>
+              <AccordionDetails sx={{ pt: 0 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Computed as: Uchcha + Saptavargaja (D1, D2, D3, D7, D9, D12, D30) + Ojayugma + Kendradi + Drekkana.
+                </Typography>
+
+                <TableContainer component={Paper} elevation={0} sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow sx={{ backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)' }}>
+                        <TableCell sx={{ fontWeight: 800 }}>Planet</TableCell>
+                        <TableCell sx={{ fontWeight: 800 }} align="right">Uchcha</TableCell>
+                        <TableCell sx={{ fontWeight: 800 }} align="right">Saptavargaja</TableCell>
+                        <TableCell sx={{ fontWeight: 800 }} align="right">Ojayugma</TableCell>
+                        <TableCell sx={{ fontWeight: 800 }} align="right">Kendradi</TableCell>
+                        <TableCell sx={{ fontWeight: 800 }} align="right">Drekkana</TableCell>
+                        <TableCell sx={{ fontWeight: 900 }} align="right">Total</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {sthanBalaPlanets.map((planetKey) => {
+                        const row = sthanBalaByPlanet[planetKey];
+                        if (!row) return null;
+
+                        const tooltip = saptavargaKeys
+                          .map((vk) => {
+                            const s = row.vargaSign?.[vk] || '—';
+                            const d = row.vargaDignity?.[vk];
+                            const dg = d?.dignity ? `${d.dignity} (${d.points})` : '—';
+                            return `${vk}: ${s} · ${dg}`;
+                          })
+                          .join('\n');
+
+                        const pColor = getPlanetColor(planetKey);
+                        const pText = getTextColor(pColor);
+
+                        return (
+                          <TableRow key={`sthan-${planetKey}`} hover>
+                            <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Box
+                                  sx={{
+                                    width: 28,
+                                    height: 28,
+                                    borderRadius: '50%',
+                                    backgroundColor: pColor,
+                                    color: pText,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontWeight: 800,
+                                    fontSize: '0.75rem',
+                                  }}
+                                >
+                                  {getPlanetAbbr(planetKey)}
+                                </Box>
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                  {toPlanetLabel(planetKey)}
+                                </Typography>
+                              </Box>
+                            </TableCell>
+
+                            <TableCell align="right">{row.uchcha.toFixed(2)}</TableCell>
+                            <TableCell align="right">
+                              <Tooltip title={<span style={{ whiteSpace: 'pre-line' }}>{tooltip}</span>} arrow placement="top">
+                                <span style={{ cursor: 'help', textDecoration: 'underline dotted' }}>
+                                  {row.saptavargaja.toFixed(2)}
+                                </span>
+                              </Tooltip>
+                            </TableCell>
+                            <TableCell align="right">{row.ojayugma.toFixed(2)}</TableCell>
+                            <TableCell align="right">{row.kendradi.toFixed(2)}</TableCell>
+                            <TableCell align="right">{row.drekkana.toFixed(2)}</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 900 }}>{row.total.toFixed(2)}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </AccordionDetails>
+            </Accordion>
+          </Grid>
+
+          {/* Digbala */}
+          <Grid item xs={12}>
+            <Accordion
+              defaultExpanded={false}
+              sx={{
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                borderRadius: '8px !important',
+                '&:before': { display: 'none' },
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+              }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Digbala
+                </Typography>
+                <Chip label="7 planets" size="small" sx={{ ml: 1 }} variant="outlined" />
+              </AccordionSummary>
+              <AccordionDetails sx={{ pt: 0 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Dig Bala = (distance from weakest cusp / 180°) × 60. Weakest cusps used: Sun/Mars→4th, Moon/Venus→10th, Jupiter/Mercury→7th, Saturn→1st (Asc-based equal cusps).
+                </Typography>
+
+                <TableContainer component={Paper} elevation={0} sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow sx={{ backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)' }}>
+                        <TableCell sx={{ fontWeight: 800 }}>Planet</TableCell>
+                        <TableCell sx={{ fontWeight: 800 }}>Weakest cusp</TableCell>
+                        <TableCell sx={{ fontWeight: 800 }} align="right">Distance</TableCell>
+                        <TableCell sx={{ fontWeight: 900 }} align="right">Digbala</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {sthanBalaPlanets.map((planetKey) => {
+                        const d1 = celebrity.planets[planetKey];
+                        const row = digBalaByPlanet[planetKey];
+                        if (!d1 || !row) return null;
+
+                        const pColor = getPlanetColor(planetKey);
+                        const pText = getTextColor(pColor);
+
+                        const weakestSign = zodiac[Math.floor((row.weakestLon % 360) / 30)];
+                        const weakestDeg = (row.weakestLon % 30 + 30) % 30;
+
+                        const tooltip = `Weakest: ${weakestSign} ${weakestDeg.toFixed(2)}°\nPlanet: ${d1.sign} ${Number(d1.degree || 0).toFixed(2)}°`;
+
+                        return (
+                          <TableRow key={`dig-${planetKey}`} hover>
+                            <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Box
+                                  sx={{
+                                    width: 28,
+                                    height: 28,
+                                    borderRadius: '50%',
+                                    backgroundColor: pColor,
+                                    color: pText,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontWeight: 800,
+                                    fontSize: '0.75rem',
+                                  }}
+                                >
+                                  {getPlanetAbbr(planetKey)}
+                                </Box>
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                  {toPlanetLabel(planetKey)}
+                                </Typography>
+                              </Box>
+                            </TableCell>
+                            <TableCell>
+                              <Tooltip title={<span style={{ whiteSpace: 'pre-line' }}>{tooltip}</span>} arrow placement="top">
+                                <span style={{ cursor: 'help', textDecoration: 'underline dotted' }}>
+                                  {weakestSign} {weakestDeg.toFixed(2)}°
+                                </span>
+                              </Tooltip>
+                            </TableCell>
+                            <TableCell align="right">{row.distance.toFixed(2)}°</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 900 }}>{row.value.toFixed(2)}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </AccordionDetails>
+            </Accordion>
+          </Grid>
+
+          {/* Kaal Bala */}
+          <Grid item xs={12}>
+            <Accordion
+              defaultExpanded={false}
+              sx={{
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                borderRadius: '8px !important',
+                '&:before': { display: 'none' },
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+              }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Kaal Bala
+                </Typography>
+                <Chip label="7 planets" size="small" sx={{ ml: 1 }} variant="outlined" />
+              </AccordionSummary>
+              <AccordionDetails sx={{ pt: 0 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Kāla Bala = Natonnata + Paksha + Tribhaga + Varsha + Masa + Dina + Hora + Ayana + Yuddha (virupas).
+                  Varsha lord: {toPlanetLabel(kaalBalaResult.meta.varshaLord)} · Masa lord: {kaalBalaResult.meta.masaLord ? toPlanetLabel(kaalBalaResult.meta.masaLord) : '—'} · Dina lord: {toPlanetLabel(kaalBalaResult.meta.dinaLord)} · Hora lord: {toPlanetLabel(kaalBalaResult.meta.horaLord)} · Paksha elongation: {kaalBalaResult.meta.pakshaDegrees.toFixed(1)}° ({kaalBalaResult.meta.waxing ? 'Shukla' : 'Krishna'}).
+                </Typography>
+
+                <TableContainer component={Paper} elevation={0} sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: 2, overflowX: 'auto' }}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow sx={{ backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)' }}>
+                        <TableCell sx={{ fontWeight: 800 }}>Planet</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700 }}>Natonnata</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700 }}>Paksha</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700 }}>Tribhaga</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700 }}>Varsha</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700 }}>Masa</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700 }}>Dina</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700 }}>Hora</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700 }}>Ayana</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700 }}>Yuddha</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 900 }}>Total</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {sthanBalaPlanets.map((planetKey) => {
+                        const row = kaalBalaResult.byPlanet[planetKey];
+                        if (!row) return null;
+                        const pColor = getPlanetColor(planetKey);
+                        const pText = getTextColor(pColor);
+                        return (
+                          <TableRow key={`kaal-${planetKey}`} hover>
+                            <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Box
+                                  sx={{
+                                    width: 28,
+                                    height: 28,
+                                    borderRadius: '50%',
+                                    backgroundColor: pColor,
+                                    color: pText,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontWeight: 800,
+                                    fontSize: '0.75rem',
+                                  }}
+                                >
+                                  {getPlanetAbbr(planetKey)}
+                                </Box>
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                  {toPlanetLabel(planetKey)}
+                                </Typography>
+                              </Box>
+                            </TableCell>
+                            <TableCell align="right">{row.natonnata.toFixed(2)}</TableCell>
+                            <TableCell align="right">{row.paksha.toFixed(2)}</TableCell>
+                            <TableCell align="right">{row.tribhaga.toFixed(2)}</TableCell>
+                            <TableCell align="right">{row.varsha.toFixed(2)}</TableCell>
+                            <TableCell align="right">{row.masa.toFixed(2)}</TableCell>
+                            <TableCell align="right">{row.dina.toFixed(2)}</TableCell>
+                            <TableCell align="right">{row.hora.toFixed(2)}</TableCell>
+                            <TableCell align="right">{row.ayana.toFixed(2)}</TableCell>
+                            <TableCell align="right">{row.yuddha.toFixed(2)}</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 900 }}>{row.total.toFixed(2)}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
               </AccordionDetails>
             </Accordion>
           </Grid>

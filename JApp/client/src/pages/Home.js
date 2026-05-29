@@ -22,7 +22,7 @@ function Home() {
   const features = [
     {
       title: 'Add New Celebrity',
-      description: 'Add detailed kundli information for new celebrities to the database',
+      description: 'Add detailed Vedic chart information for new public figures in JYTS Astro',
       icon: <AddIcon sx={{ fontSize: 40 }} />,
       path: '/celebrities/new',
       variant: 'contained',
@@ -36,7 +36,7 @@ function Home() {
     },
     {
       title: 'View All Celebrities',
-      description: 'Browse and search through the complete celebrity kundli database',
+      description: 'Browse and search chart profiles in JYTS Astro',
       icon: <ListIcon sx={{ fontSize: 40 }} />,
       path: '/celebrities',
       variant: 'outlined',
@@ -50,7 +50,7 @@ function Home() {
     },
     {
       title: 'Analysis',
-      description: 'Analyze patterns and trends in celebrity kundli data',
+      description: 'Analyze patterns and trends across chart data in JYTS Astro',
       icon: <AnalyticsIcon sx={{ fontSize: 40 }} />,
       path: '/analysis',
       variant: 'outlined',
@@ -84,7 +84,7 @@ function Home() {
               mb: 2,
             }}
           >
-            Celebrity Kundli Database
+            JYTS Astro
           </Typography>
           <Typography 
             variant="h6" 
@@ -95,7 +95,7 @@ function Home() {
               lineHeight: 1.6,
             }}
           >
-            Store and manage Vedic kundli data for celebrities, including planetary positions,
+            JYTS Astro helps you store and explore Vedic charts for public figures: planetary positions,
             zodiac sign placements, house positions, and ascendant information.
           </Typography>
         </Box>
