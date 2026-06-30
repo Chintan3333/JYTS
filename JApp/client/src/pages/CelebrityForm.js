@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { celebritiesApi } from '../services/api';
+import { ZODIAC_SIGNS } from '../constants/astrology';
 import {
   Container,
   Typography,
@@ -12,10 +13,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-const zodiacSigns = [
-  'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
-  'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
-];
+const zodiacSigns = ZODIAC_SIGNS;
 
 function CelebrityForm() {
   const { id } = useParams();
@@ -56,7 +54,7 @@ function CelebrityForm() {
   const fetchCelebrity = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`https://jyts-app-backend.onrender.com/api/celebrities/${id}`);
+      const response = await celebritiesApi.getById(id);
       const celebrity = response.data;
       setFormData({
         ...celebrity,
@@ -106,9 +104,9 @@ function CelebrityForm() {
     try {
       setLoading(true);
       if (id) {
-        await axios.put(`https://jyts-app-backend.onrender.com/api/celebrities/${id}`, formData);
+        await celebritiesApi.update(id, formData);
       } else {
-        await axios.post('https://jyts-app-backend.onrender.com/api/celebrities', formData);
+        await celebritiesApi.create(formData);
       }
       navigate('/celebrities');
     } catch (err) {

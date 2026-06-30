@@ -19,7 +19,8 @@ import {
   Alert,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import axios from 'axios';
+import { searchApi } from '../services/api';
+import { ZODIAC_SIGNS, SIGN_LORDS } from '../constants/astrology';
 
 const FilterSection = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
@@ -31,10 +32,7 @@ const planets = [
   'Jupiter', 'Saturn', 'Rahu', 'Ketu'
 ];
 
-const zodiacSigns = [
-  'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
-  'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
-];
+const zodiacSigns = ZODIAC_SIGNS;
 
 const aspects = [
   'Conjunction (0°)',
@@ -44,20 +42,9 @@ const aspects = [
   'Opposition (180°)'
 ];
 
-const houseLords = {
-  'Aries': 'Mars',
-  'Taurus': 'Venus',
-  'Gemini': 'Mercury',
-  'Cancer': 'Moon',
-  'Leo': 'Sun',
-  'Virgo': 'Mercury',
-  'Libra': 'Venus',
-  'Scorpio': 'Mars',
-  'Sagittarius': 'Jupiter',
-  'Capricorn': 'Saturn',
-  'Aquarius': 'Saturn',
-  'Pisces': 'Jupiter'
-};
+const houseLords = Object.fromEntries(
+  Object.entries(SIGN_LORDS).map(([sign, lord]) => [sign, lord.charAt(0).toUpperCase() + lord.slice(1)])
+);
 
 const AdvancedSearch = () => {
   const [filters, setFilters] = useState({
@@ -140,35 +127,26 @@ const AdvancedSearch = () => {
     setSearchResults([]);
 
     try {
-      let endpoint = '';
-      let data = {};
+      let response;
 
-      // Determine which search to perform based on filled filters
       if (filters.planetPosition.planet && filters.planetPosition.sign && filters.planetPosition.degree) {
-        endpoint = 'https://jyts-app-backend.onrender.com/api/search/planet-position';
-        data = filters.planetPosition;
+        response = await searchApi.planetPosition(filters.planetPosition);
       } else if (filters.conjunction.planet1 && filters.conjunction.planet2) {
-        endpoint = 'https://jyts-app-backend.onrender.com/api/search/conjunction';
-        data = filters.conjunction;
+        response = await searchApi.conjunction(filters.conjunction);
       } else if (filters.aspect.planet1 && filters.aspect.planet2 && filters.aspect.aspect) {
-        endpoint = 'https://jyts-app-backend.onrender.com/api/search/aspect';
-        data = filters.aspect;
+        response = await searchApi.aspect(filters.aspect);
       } else if (filters.houseLord.houseNumber && filters.houseLord.positionHouse) {
-        endpoint = 'https://jyts-app-backend.onrender.com/api/search/house-lord';
-        data = filters.houseLord;
+        response = await searchApi.houseLord(filters.houseLord);
       } else if (filters.planetInHouse.planet && filters.planetInHouse.houseNumber) {
-        endpoint = 'https://jyts-app-backend.onrender.com/api/search/planet-in-house';
-        data = filters.planetInHouse;
+        response = await searchApi.planetInHouse(filters.planetInHouse);
       } else if (filters.ascendant.sign) {
-        endpoint = 'https://jyts-app-backend.onrender.com/api/search/ascendant';
-        data = filters.ascendant;
+        response = await searchApi.ascendant(filters.ascendant);
       } else {
         setError('Please fill in all required fields for at least one search type');
         setLoading(false);
         return;
       }
 
-      const response = await axios.post(endpoint, data);
       setSearchResults(response.data);
     } catch (error) {
       setError(error.response?.data?.error || 'An error occurred while searching');

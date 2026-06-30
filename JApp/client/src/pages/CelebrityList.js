@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import axios from 'axios';
+import { celebritiesApi } from '../services/api';
 import {
   Container,
   Typography,
@@ -37,7 +37,7 @@ function CelebrityList() {
 
   const fetchCelebrities = async () => {
     try {
-      const response = await axios.get('https://jyts-app-backend.onrender.com/api/celebrities');
+      const response = await celebritiesApi.list();
       setCelebrities(response.data);
       setLoading(false);
     } catch (err) {
@@ -49,7 +49,7 @@ function CelebrityList() {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this celebrity?')) {
       try {
-        await axios.delete(`https://jyts-app-backend.onrender.com/api/celebrities/${id}`);
+        await celebritiesApi.delete(id);
         fetchCelebrities();
       } catch (err) {
         setError('Failed to delete celebrity');

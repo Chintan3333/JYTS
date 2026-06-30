@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import { celebritiesApi } from '../services/api';
+import { CELEBRITY_CATEGORIES } from '../constants/astrology';
 import {
   Container,
   Typography,
@@ -14,7 +15,7 @@ import {
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { calculateChart } from '../utils/chartCalculation';
 
-const categories = ['Business', 'Politics', 'Entertainment', 'Sports', 'Science', 'Other'];
+const categories = CELEBRITY_CATEGORIES;
 
 function GenerateCelebrityChart() {
   const { id } = useParams();
@@ -42,7 +43,7 @@ function GenerateCelebrityChart() {
     const fetchCelebrity = async () => {
       try {
         setInitialLoading(true);
-        const response = await axios.get(`https://jyts-app-backend.onrender.com/api/celebrities/${id}`);
+        const response = await celebritiesApi.getById(id);
         const celebrity = response.data;
         setFormData({
           name: celebrity.name || '',
@@ -94,8 +95,6 @@ function GenerateCelebrityChart() {
         setLoading(false);
         return;
       }
-      console.log(' time here at generate', lat, lon, birthDateTime);
-
       const { ascendant, planets } = calculateChart(birthDateTime, lat, lon);
       const payload = {
         name: formData.name,
@@ -124,10 +123,10 @@ function GenerateCelebrityChart() {
         },
       };
       if (id) {
-        const response = await axios.put(`https://jyts-app-backend.onrender.com/api/celebrities/${id}`, payload);
+        const response = await celebritiesApi.update(id, payload);
         navigate(`/celebrities/${response.data._id}`);
       } else {
-        const response = await axios.post('https://jyts-app-backend.onrender.com/api/celebrities', payload);
+        const response = await celebritiesApi.create(payload);
         navigate(`/celebrities/${response.data._id}`);
       }
     } catch (err) {

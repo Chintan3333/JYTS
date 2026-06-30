@@ -114,9 +114,7 @@ export function calculateAscendant(date, lat, lon) {
   let tropicalLon = asc;
 
   // Convert to sidereal
-  const siderealLon =
-    tropicalToSiderealLongitude(tropicalLon, date);
-  console.log('side longitude', siderealLon);
+  const siderealLon = tropicalToSiderealLongitude(tropicalLon, date);
 
   const signIndex = Math.floor(siderealLon / 30);
   const degreeInSign = siderealLon % 30;

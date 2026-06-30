@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { celebritiesApi } from '../services/api';
 import {
   Container,
   Typography,
@@ -49,12 +49,15 @@ function Analysis() {
 
   useEffect(() => {
     fetchCategories();
+  }, []);
+
+  useEffect(() => {
     fetchAnalysis();
   }, [selectedCategory]);
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('https://jyts-app-backend.onrender.com/api/celebrities');
+      const response = await celebritiesApi.list();
       const uniqueCategories = [...new Set(response.data.map(celebrity => celebrity.category))];
       setCategories(uniqueCategories);
     } catch (err) {
@@ -65,7 +68,7 @@ function Analysis() {
   const fetchAnalysis = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`https://jyts-app-backend.onrender.com/api/celebrities/analysis/planetary-positions?category=${selectedCategory}`);
+      const response = await celebritiesApi.analysis(selectedCategory);
       setAnalysis(response.data);
       setLoading(false);
     } catch (err) {

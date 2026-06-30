@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { celebritiesApi } from '../services/api';
+import NorthIndianKundali from '../components/NorthIndianKundali';
+import { buildHouseSignNumbers } from '../utils/kundaliChart';
+import { ZODIAC_SIGNS } from '../constants/astrology';
+import { getPlanetAbbr, getPlanetColor, getTextColor, getZodiacNumber, toPlanetLabel } from '../utils/planetDisplay';
 import { planetInfo, houseInfo, planetInSignTraits, houseLordInHouseEffects, planetInHouseEffects } from '../data/astrologyData';
 import { getPlanetNakshatraPrediction } from '../data/planetInNakshatraData';
 import {
@@ -33,57 +37,9 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EditIcon from '@mui/icons-material/Edit';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { alpha } from '@mui/material/styles';
-import { EclipticGeoMoon, EclipticLongitude, Ecliptic, GeoVector, Body, SearchMoonNode, GeoMoon, Observer, SearchRiseSet, Equator } from 'astronomy-engine';
+import { EclipticGeoMoon, Ecliptic, GeoVector, Body, SearchMoonNode, GeoMoon, Observer, SearchRiseSet, Equator } from 'astronomy-engine';
 
-// Helper function to get zodiac sign number
-const getZodiacNumber = (sign) => {
-  const zodiacMap = {
-    'Aries': 1, 'Taurus': 2, 'Gemini': 3, 'Cancer': 4,
-    'Leo': 5, 'Virgo': 6, 'Libra': 7, 'Scorpio': 8,
-    'Sagittarius': 9, 'Capricorn': 10, 'Aquarius': 11, 'Pisces': 12
-  };
-  return zodiacMap[sign] || 0;
-};
-
-// Helper function to get planet abbreviation
-const getPlanetAbbr = (planet) => {
-  const planetMap = {
-    'sun': 'Su', 'moon': 'Mo', 'mars': 'Ma', 'mercury': 'Me',
-    'jupiter': 'Ju', 'venus': 'Ve', 'saturn': 'Sa', 'rahu': 'Ra', 'ketu': 'Ke'
-  };
-  return planetMap[planet] || planet;
-};
-
-// Helper function to get planet color
-const getPlanetColor = (planet) => {
-  const colorMap = {
-    'sun': '#E25825', // Orange
-    'moon': '#87CEEB', // Sky Blue
-    'mars': '#FF0000', // Red
-    'mercury': '#008000', // Green
-    'jupiter': '#FFDF00', // Yellow
-    'venus': '#FF69B4', // Dark Pink
-    'saturn': '#808080', // Grey
-    'rahu': '#800080', // Purple
-    'ketu': '#CD853F' // Light Brown
-  };
-  return colorMap[planet] || '#1976d2'; // Default blue if planet not found
-};
-
-// Helper function to get text color based on background
-const getTextColor = (backgroundColor) => {
-  // Convert hex to RGB
-  const hex = backgroundColor.replace('#', '');
-  const r = parseInt(hex.substr(0, 2), 16);
-  const g = parseInt(hex.substr(2, 2), 16);
-  const b = parseInt(hex.substr(4, 2), 16);
-
-  // Calculate relative luminance
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-  // Return black or white based on luminance
-  return luminance > 0.5 ? '#000000' : '#ffffff';
-};
+const zodiac = ZODIAC_SIGNS;
 
 // Helper function to get sign lord
 const getSignLord = (sign) => {
@@ -569,14 +525,14 @@ const combineRelation = (naturalRel, temporaryRel) => {
   return 'neutral';
 };
 
-const dignityPoints = ({ planetKey, sign, planetHouse, planets }) => {
+const dignityPoints = ({ planetKey, sign, planetHouse, planets, varga }) => {
   // Exalted / Mooltrikona / Own sign are absolute; else use combined friendship vs sign lord.
   if (!sign) return { points: 0, dignity: 'Unknown' };
 
   // const exalt = EXALTATION_POINTS[planetKey]?.sign === sign;
   // if (exalt) return { points: 20, dignity: 'Exalted' };
 
-  if (MOOLTRIKONA_SIGN[planetKey] === sign) return { points: 45, dignity: 'Mooltrikona' };
+  if (MOOLTRIKONA_SIGN[planetKey] === sign) return { points: varga=='D1' ?45:30, dignity: 'Mooltrikona' };
 
   if ((OWN_SIGNS[planetKey] || []).includes(sign)) return { points: 30, dignity: 'Own sign' };
 
@@ -700,7 +656,6 @@ const checkNeechaYoga = (planet, sign, planets) => {
     'ketu': 'Gemini'
   };
 
-  console.log('planet', planet, sign);
 
   // Check if planet is debilitated
   if (neechaSigns[planet] === sign) {
@@ -1231,7 +1186,6 @@ const PLANET_OWN_SIGNS = {
 };
 
 const toPlanetKey = (name) => name.toLowerCase();
-const toPlanetLabel = (key) => key.charAt(0).toUpperCase() + key.slice(1);
 const isKendraHouse = (h) => [1, 4, 7, 10].includes(h);
 const isTrikonaHouse = (h) => [1, 5, 9].includes(h);
 const moonRelativeHouse = (moonHouse, offset) => ((moonHouse - 1 + offset) % 12) + 1;
@@ -1831,12 +1785,6 @@ const nakshatraLord = {
   Revati: "Mercury"
 };
 
-const zodiac = [
-  "Aries", "Taurus", "Gemini", "Cancer",
-  "Leo", "Virgo", "Libra", "Scorpio",
-  "Sagittarius", "Capricorn", "Aquarius", "Pisces"
-];
-
 const dashaOrder = [
   "Ketu", "Venus", "Sun", "Moon", "Mars",
   "Rahu", "Jupiter", "Saturn", "Mercury"
@@ -1870,8 +1818,6 @@ function calculateMahadasha(birthDate, nakshatra, degreeInsideNakshatra) {
   startMonthsFraction = Math.floor(startMonthsFraction) + 1;
 
   let monthFraction = new Date(birthDate).getMonth() + 1 + startMonthsFraction % 12;
-  console.log('month fraction', monthFraction, startMonthsFraction, remainingYears, startYearsFraction);
-
 
   const results = [];
 
@@ -1942,7 +1888,6 @@ function lahiriAyanamsa(date) {
 
 
 const checkPlanetNakshatraDetails = (date, planet) => {
-  //console.log('date & time', date, planet);
   let ecl = null;
   if (planet == 'Moon') {
     // Moon geocentric ecliptic longitude
@@ -1951,7 +1896,6 @@ const checkPlanetNakshatraDetails = (date, planet) => {
   } else if (planet == 'Rahu' || planet == 'Ketu') {
     const node = SearchMoonNode(date);
     ecl = Ecliptic(GeoMoon(node.time));
-    console.log('rahu ketu data', node);
     if (planet == 'Rahu') {
       ecl = node.kind == 1 ? ecl.elon : (ecl.elon + 180) % 360;
     } else if (planet == 'Ketu') {
@@ -1966,9 +1910,6 @@ const checkPlanetNakshatraDetails = (date, planet) => {
   const ayanamsa = lahiriAyanamsa(date);
 
   const planetLongitude = (ecl - ayanamsa + 360) % 360 / 30;
-  //const planetLongitude = ecl / 30;
-  //console.log('moon data', ecl, planetLongitude);
-
 
   // Zodiac sign
   const signIndex = Math.floor(planetLongitude);
@@ -1983,7 +1924,6 @@ const checkPlanetNakshatraDetails = (date, planet) => {
   // Pada
   const padaSize = 3 + 20 / 60;
   const pada = Math.floor(degreeInsideNakshatra / padaSize) + 1;
-  console.log('moon data 2', signIndex, nakSize, nakIndex, degreeInsideNakshatra, padaSize, pada, zodiac[signIndex], nakshatras[nakIndex]);
 
   return {
     planetLongitude: (planetLongitude * 30).toFixed(4),
@@ -2010,7 +1950,7 @@ function CelebrityDetail() {
 
   const fetchCelebrity = async () => {
     try {
-      const response = await axios.get(`https://jyts-app-backend.onrender.com/api/celebrities/${id}`);
+      const response = await celebritiesApi.getById(id);
       const data = response.data;
       if (data) {
         setCelebrity(data);
@@ -2097,8 +2037,6 @@ function CelebrityDetail() {
   const ascLonD1 = zodiacSigns.indexOf(celebrity.ascendant.sign) * 30 + Number(celebrity.ascendant.degree || 0);
   const d9AscSign = getNavamsaSignFromLongitude(ascLonD1);
   const d9AscNak = getNakshatraPadaFromLongitude(ascLonD1);
-  const d9HouseSigns = Array.from({ length: 12 }, (_, i) => getSignForHouse(i + 1, d9AscSign));
-
   const d9PlanetSigns = {};
   Object.entries(celebrity.planets).forEach(([planetKey, data]) => {
     const planetCap = planetKey.charAt(0).toUpperCase() + planetKey.slice(1);
@@ -2107,9 +2045,16 @@ function CelebrityDetail() {
       : (zodiacSigns.indexOf(data.sign) * 30 + Number(data.degree || 0));
     d9PlanetSigns[planetKey] = getNavamsaSignFromLongitude(lon);
   });
-  const d9PlanetsByHouse = buildHousePlanets(
-    Object.keys(celebrity.planets),
-    (p) => getHouseNumber(d9PlanetSigns[p], d9AscSign)
+  const d9HousePositions = buildHouseSignNumbers(d9AscSign);
+  const d9PlanetsForChart = Object.fromEntries(
+    Object.keys(celebrity.planets).map((p) => [
+      p,
+      {
+        house: getHouseNumber(d9PlanetSigns[p], d9AscSign),
+        sign: d9PlanetSigns[p],
+        degree: celebrity.planets[p].degree,
+      },
+    ])
   );
 
   // Divisional chart analysis (D1, D2..D60, incl. D9)
@@ -2181,6 +2126,7 @@ function CelebrityDetail() {
           sign: vargaSign[k],
           planetHouse: d1House,
           planets: celebrity.planets,
+          varga: k,
         });
         return sum + points;
       }, 0);
@@ -2206,6 +2152,7 @@ function CelebrityDetail() {
               sign: vargaSign[vk],
               planetHouse: d1House,
               planets: celebrity.planets,
+              varga: vk,
             });
             return [vk, res];
           })
@@ -2232,10 +2179,16 @@ function CelebrityDetail() {
 
   // Chandra Kundali (Moon chart): Moon becomes 1st house
   const moonAscSign = celebrity.planets.moon?.sign || celebrity.ascendant.sign;
-  const moonHouseSigns = Array.from({ length: 12 }, (_, i) => getSignForHouse(i + 1, moonAscSign));
-  const moonPlanetsByHouse = buildHousePlanets(
-    Object.keys(celebrity.planets),
-    (p) => getHouseNumber(celebrity.planets[p].sign, moonAscSign)
+  const moonHousePositions = buildHouseSignNumbers(moonAscSign);
+  const moonPlanetsForChart = Object.fromEntries(
+    Object.keys(celebrity.planets).map((p) => [
+      p,
+      {
+        house: getHouseNumber(celebrity.planets[p].sign, moonAscSign),
+        sign: celebrity.planets[p].sign,
+        degree: celebrity.planets[p].degree,
+      },
+    ])
   );
 
 
@@ -2377,760 +2330,18 @@ function CelebrityDetail() {
                 <Typography variant="h6" sx={{ fontWeight: 600 }}>
                   Vedic Astrology Kundli
                 </Typography>
-                <Chip label="House chart" size="small" sx={{ ml: 1 }} variant="outlined" />
+                <Chip label="North Indian" size="small" sx={{ ml: 1 }} variant="outlined" />
               </AccordionSummary>
               <AccordionDetails sx={{ pt: 0 }}>
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(5, 1fr)',
-                    gap: 2,
-                    mt: 2,
-                    '& > div': {
-                      position: 'relative',
-                      minHeight: '120px',
-                      p: 2,
-                      borderRadius: 2,
-                      border: (theme) => `1px solid ${theme.palette.divider}`,
-                      backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    },
-                  }}
-                >
-                  {/* Row 1 */}
-                  <Box></Box>
-                  {/* House 2 */}
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      House 2
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {housePositions[1] || ''}
-                    </Typography>
-                    <Box sx={{
-                      position: 'absolute',
-                      bottom: 4,
-                      display: 'flex',
-                      gap: 1,
-                      flexWrap: 'wrap',
-                      justifyContent: 'center',
-                      width: '100%'
-                    }}>
-                      {Object.entries(celebrity.planets).map(([planet, data]) => {
-                        if (data.house === 2) {
-                          const bgColor = getPlanetColor(planet);
-                          const textColor = getTextColor(bgColor);
-                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
-                          return (
-                            <Tooltip
-                              key={planet}
-                              title={
-                                <>
-                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
-                                  {nakDetail && (
-                                    <>
-                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
-                                    </>
-                                  )}
-                                </>
-                              }
-                              arrow
-                              placement="top"
-                            >
-                              <Box
-                                sx={{
-                                  backgroundColor: bgColor,
-                                  color: textColor,
-                                  padding: '2px 4px',
-                                  borderRadius: '4px',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 'bold',
-                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                  cursor: 'help',
-                                }}
-                              >
-                                {getPlanetAbbr(planet)}
-                              </Box>
-                            </Tooltip>
-                          );
-                        }
-                        return null;
-                      })}
-                    </Box>
-                  </Box>
-                  <Box></Box>
-                  {/* House 12 */}
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      House 12
-                    </Typography>
-                    <Typography variant="body2">
-                      {housePositions[11] || ''}
-                    </Typography>
-                    <Box sx={{
-                      position: 'absolute',
-                      bottom: 4,
-                      display: 'flex',
-                      gap: 1,
-                      flexWrap: 'wrap',
-                      justifyContent: 'center',
-                      width: '100%'
-                    }}>
-                      {Object.entries(celebrity.planets).map(([planet, data]) => {
-                        if (data.house === 12) {
-                          const bgColor = getPlanetColor(planet);
-                          const textColor = getTextColor(bgColor);
-                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
-                          return (
-                            <Tooltip
-                              key={planet}
-                              title={
-                                <>
-                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
-                                  {nakDetail && (
-                                    <>
-                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
-                                    </>
-                                  )}
-                                </>
-                              }
-                              arrow
-                              placement="top"
-                            >
-                              <Box
-                                sx={{
-                                  backgroundColor: bgColor,
-                                  color: textColor,
-                                  padding: '2px 4px',
-                                  borderRadius: '4px',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 'bold',
-                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                  cursor: 'help',
-                                }}
-                              >
-                                {getPlanetAbbr(planet)}
-                              </Box>
-                            </Tooltip>
-                          );
-                        }
-                        return null;
-                      })}
-                    </Box>
-                  </Box>
-                  <Box></Box>
-
-                  {/* Row 2 */}
-                  {/* House 3 */}
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      House 3
-                    </Typography>
-                    <Typography variant="body2">
-                      {housePositions[2] || ''}
-                    </Typography>
-                    <Box sx={{
-                      position: 'absolute',
-                      bottom: 4,
-                      display: 'flex',
-                      gap: 1,
-                      flexWrap: 'wrap',
-                      justifyContent: 'center',
-                      width: '100%'
-                    }}>
-                      {Object.entries(celebrity.planets).map(([planet, data]) => {
-                        if (data.house === 3) {
-                          const bgColor = getPlanetColor(planet);
-                          const textColor = getTextColor(bgColor);
-                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
-                          return (
-                            <Tooltip
-                              key={planet}
-                              title={
-                                <>
-                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
-                                  {nakDetail && (
-                                    <>
-                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
-                                    </>
-                                  )}
-                                </>
-                              }
-                              arrow
-                              placement="top"
-                            >
-                              <Box
-                                sx={{
-                                  backgroundColor: bgColor,
-                                  color: textColor,
-                                  padding: '2px 4px',
-                                  borderRadius: '4px',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 'bold',
-                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                  cursor: 'help',
-                                }}
-                              >
-                                {getPlanetAbbr(planet)}
-                              </Box>
-                            </Tooltip>
-                          );
-                        }
-                        return null;
-                      })}
-                    </Box>
-                  </Box>
-                  <Box></Box>
-                  {/* House 1 */}
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      House 1
-                    </Typography>
-                    <Typography variant="body2">
-                      {housePositions[0] || ''}
-                    </Typography>
-                    <Box sx={{
-                      position: 'absolute',
-                      bottom: 4,
-                      display: 'flex',
-                      gap: 1,
-                      flexWrap: 'wrap',
-                      justifyContent: 'center',
-                      width: '100%'
-                    }}>
-                      {Object.entries(celebrity.planets).map(([planet, data]) => {
-                        if (data.house === 1) {
-                          const bgColor = getPlanetColor(planet);
-                          const textColor = getTextColor(bgColor);
-                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
-                          return (
-                            <Tooltip
-                              key={planet}
-                              title={
-                                <>
-                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
-                                  {nakDetail && (
-                                    <>
-                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
-                                    </>
-                                  )}
-                                </>
-                              }
-                              arrow
-                              placement="top"
-                            >
-                              <Box
-                                sx={{
-                                  backgroundColor: bgColor,
-                                  color: textColor,
-                                  padding: '2px 4px',
-                                  borderRadius: '4px',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 'bold',
-                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                  cursor: 'help',
-                                }}
-                              >
-                                {getPlanetAbbr(planet)}
-                              </Box>
-                            </Tooltip>
-                          );
-                        }
-                        return null;
-                      })}
-                    </Box>
-                  </Box>
-                  <Box></Box>
-                  {/* House 11 */}
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      House 11
-                    </Typography>
-                    <Typography variant="body2">
-                      {housePositions[10] || ''}
-                    </Typography>
-                    <Box sx={{
-                      position: 'absolute',
-                      bottom: 4,
-                      display: 'flex',
-                      gap: 1,
-                      flexWrap: 'wrap',
-                      justifyContent: 'center',
-                      width: '100%'
-                    }}>
-                      {Object.entries(celebrity.planets).map(([planet, data]) => {
-                        if (data.house === 11) {
-                          const bgColor = getPlanetColor(planet);
-                          const textColor = getTextColor(bgColor);
-                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
-                          return (
-                            <Tooltip
-                              key={planet}
-                              title={
-                                <>
-                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
-                                  {nakDetail && (
-                                    <>
-                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
-                                    </>
-                                  )}
-                                </>
-                              }
-                              arrow
-                              placement="top"
-                            >
-                              <Box
-                                sx={{
-                                  backgroundColor: bgColor,
-                                  color: textColor,
-                                  padding: '2px 4px',
-                                  borderRadius: '4px',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 'bold',
-                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                  cursor: 'help',
-                                }}
-                              >
-                                {getPlanetAbbr(planet)}
-                              </Box>
-                            </Tooltip>
-                          );
-                        }
-                        return null;
-                      })}
-                    </Box>
-                  </Box>
-
-                  {/* Row 3 */}
-                  <Box></Box>
-                  {/* House 4 */}
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      House 4
-                    </Typography>
-                    <Typography variant="body2">
-                      {housePositions[3] || ''}
-                    </Typography>
-                    <Box sx={{
-                      position: 'absolute',
-                      bottom: 4,
-                      display: 'flex',
-                      gap: 1,
-                      flexWrap: 'wrap',
-                      justifyContent: 'center',
-                      width: '100%'
-                    }}>
-                      {Object.entries(celebrity.planets).map(([planet, data]) => {
-                        if (data.house === 4) {
-                          const bgColor = getPlanetColor(planet);
-                          const textColor = getTextColor(bgColor);
-                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
-                          return (
-                            <Tooltip
-                              key={planet}
-                              title={
-                                <>
-                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
-                                  {nakDetail && (
-                                    <>
-                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
-                                    </>
-                                  )}
-                                </>
-                              }
-                              arrow
-                              placement="top"
-                            >
-                              <Box
-                                sx={{
-                                  backgroundColor: bgColor,
-                                  color: textColor,
-                                  padding: '2px 4px',
-                                  borderRadius: '4px',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 'bold',
-                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                  cursor: 'help',
-                                }}
-                              >
-                                {getPlanetAbbr(planet)}
-                              </Box>
-                            </Tooltip>
-                          );
-                        }
-                        return null;
-                      })}
-                    </Box>
-                  </Box>
-                  <Box></Box>
-                  {/* House 10 */}
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      House 10
-                    </Typography>
-                    <Typography variant="body2">
-                      {housePositions[9] || ''}
-                    </Typography>
-                    <Box sx={{
-                      position: 'absolute',
-                      bottom: 4,
-                      display: 'flex',
-                      gap: 1,
-                      flexWrap: 'wrap',
-                      justifyContent: 'center',
-                      width: '100%'
-                    }}>
-                      {Object.entries(celebrity.planets).map(([planet, data]) => {
-                        if (data.house === 10) {
-                          const bgColor = getPlanetColor(planet);
-                          const textColor = getTextColor(bgColor);
-                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
-                          return (
-                            <Tooltip
-                              key={planet}
-                              title={
-                                <>
-                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
-                                  {nakDetail && (
-                                    <>
-                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
-                                    </>
-                                  )}
-                                </>
-                              }
-                              arrow
-                              placement="top"
-                            >
-                              <Box
-                                sx={{
-                                  backgroundColor: bgColor,
-                                  color: textColor,
-                                  padding: '2px 4px',
-                                  borderRadius: '4px',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 'bold',
-                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                  cursor: 'help',
-                                }}
-                              >
-                                {getPlanetAbbr(planet)}
-                              </Box>
-                            </Tooltip>
-                          );
-                        }
-                        return null;
-                      })}
-                    </Box>
-                  </Box>
-                  <Box></Box>
-
-                  {/* Row 4 */}
-                  {/* House 5 */}
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      House 5
-                    </Typography>
-                    <Typography variant="body2">
-                      {housePositions[4] || ''}
-                    </Typography>
-                    <Box sx={{
-                      position: 'absolute',
-                      bottom: 4,
-                      display: 'flex',
-                      gap: 1,
-                      flexWrap: 'wrap',
-                      justifyContent: 'center',
-                      width: '100%'
-                    }}>
-                      {Object.entries(celebrity.planets).map(([planet, data]) => {
-                        if (data.house === 5) {
-                          const bgColor = getPlanetColor(planet);
-                          const textColor = getTextColor(bgColor);
-                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
-                          return (
-                            <Tooltip
-                              key={planet}
-                              title={
-                                <>
-                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
-                                  {nakDetail && (
-                                    <>
-                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
-                                    </>
-                                  )}
-                                </>
-                              }
-                              arrow
-                              placement="top"
-                            >
-                              <Box
-                                sx={{
-                                  backgroundColor: bgColor,
-                                  color: textColor,
-                                  padding: '2px 4px',
-                                  borderRadius: '4px',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 'bold',
-                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                  cursor: 'help',
-                                }}
-                              >
-                                {getPlanetAbbr(planet)}
-                              </Box>
-                            </Tooltip>
-                          );
-                        }
-                        return null;
-                      })}
-                    </Box>
-                  </Box>
-                  <Box></Box>
-                  {/* House 7 */}
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      House 7
-                    </Typography>
-                    <Typography variant="body2">
-                      {housePositions[6] || ''}
-                    </Typography>
-                    <Box sx={{
-                      position: 'absolute',
-                      bottom: 4,
-                      display: 'flex',
-                      gap: 1,
-                      flexWrap: 'wrap',
-                      justifyContent: 'center',
-                      width: '100%'
-                    }}>
-                      {Object.entries(celebrity.planets).map(([planet, data]) => {
-                        if (data.house === 7) {
-                          const bgColor = getPlanetColor(planet);
-                          const textColor = getTextColor(bgColor);
-                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
-                          return (
-                            <Tooltip
-                              key={planet}
-                              title={
-                                <>
-                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
-                                  {nakDetail && (
-                                    <>
-                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
-                                    </>
-                                  )}
-                                </>
-                              }
-                              arrow
-                              placement="top"
-                            >
-                              <Box
-                                sx={{
-                                  backgroundColor: bgColor,
-                                  color: textColor,
-                                  padding: '2px 4px',
-                                  borderRadius: '4px',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 'bold',
-                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                  cursor: 'help',
-                                }}
-                              >
-                                {getPlanetAbbr(planet)}
-                              </Box>
-                            </Tooltip>
-                          );
-                        }
-                        return null;
-                      })}
-                    </Box>
-                  </Box>
-                  <Box></Box>
-                  {/* House 9 */}
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      House 9
-                    </Typography>
-                    <Typography variant="body2">
-                      {housePositions[8] || ''}
-                    </Typography>
-                    <Box sx={{
-                      position: 'absolute',
-                      bottom: 4,
-                      display: 'flex',
-                      gap: 1,
-                      flexWrap: 'wrap',
-                      justifyContent: 'center',
-                      width: '100%'
-                    }}>
-                      {Object.entries(celebrity.planets).map(([planet, data]) => {
-                        if (data.house === 9) {
-                          const bgColor = getPlanetColor(planet);
-                          const textColor = getTextColor(bgColor);
-                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
-                          return (
-                            <Tooltip
-                              key={planet}
-                              title={
-                                <>
-                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
-                                  {nakDetail && (
-                                    <>
-                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
-                                    </>
-                                  )}
-                                </>
-                              }
-                              arrow
-                              placement="top"
-                            >
-                              <Box
-                                sx={{
-                                  backgroundColor: bgColor,
-                                  color: textColor,
-                                  padding: '2px 4px',
-                                  borderRadius: '4px',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 'bold',
-                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                  cursor: 'help',
-                                }}
-                              >
-                                {getPlanetAbbr(planet)}
-                              </Box>
-                            </Tooltip>
-                          );
-                        }
-                        return null;
-                      })}
-                    </Box>
-                  </Box>
-
-                  {/* Row 5 */}
-                  <Box></Box>
-                  {/* House 6 */}
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      House 6
-                    </Typography>
-                    <Typography variant="body2">
-                      {housePositions[5] || ''}
-                    </Typography>
-                    <Box sx={{
-                      position: 'absolute',
-                      bottom: 4,
-                      display: 'flex',
-                      gap: 1,
-                      flexWrap: 'wrap',
-                      justifyContent: 'center',
-                      width: '100%'
-                    }}>
-                      {Object.entries(celebrity.planets).map(([planet, data]) => {
-                        if (data.house === 6) {
-                          const bgColor = getPlanetColor(planet);
-                          const textColor = getTextColor(bgColor);
-                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
-                          return (
-                            <Tooltip
-                              key={planet}
-                              title={
-                                <>
-                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
-                                  {nakDetail && (
-                                    <>
-                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
-                                    </>
-                                  )}
-                                </>
-                              }
-                              arrow
-                              placement="top"
-                            >
-                              <Box
-                                sx={{
-                                  backgroundColor: bgColor,
-                                  color: textColor,
-                                  padding: '2px 4px',
-                                  borderRadius: '4px',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 'bold',
-                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                  cursor: 'help',
-                                }}
-                              >
-                                {getPlanetAbbr(planet)}
-                              </Box>
-                            </Tooltip>
-                          );
-                        }
-                        return null;
-                      })}
-                    </Box>
-                  </Box>
-                  <Box></Box>
-                  {/* House 8 */}
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      House 8
-                    </Typography>
-                    <Typography variant="body2">
-                      {housePositions[7] || ''}
-                    </Typography>
-                    <Box sx={{
-                      position: 'absolute',
-                      bottom: 4,
-                      display: 'flex',
-                      gap: 1,
-                      flexWrap: 'wrap',
-                      justifyContent: 'center',
-                      width: '100%'
-                    }}>
-                      {Object.entries(celebrity.planets).map(([planet, data]) => {
-                        if (data.house === 8) {
-                          const bgColor = getPlanetColor(planet);
-                          const textColor = getTextColor(bgColor);
-                          const nakDetail = planetNakshatraDetails[planet.charAt(0).toUpperCase() + planet.slice(1)];
-                          return (
-                            <Tooltip
-                              key={planet}
-                              title={
-                                <>
-                                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
-                                  {nakDetail && (
-                                    <>
-                                      <br /><strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
-                                    </>
-                                  )}
-                                </>
-                              }
-                              arrow
-                              placement="top"
-                            >
-                              <Box
-                                sx={{
-                                  backgroundColor: bgColor,
-                                  color: textColor,
-                                  padding: '2px 4px',
-                                  borderRadius: '4px',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 'bold',
-                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                  cursor: 'help',
-                                }}
-                              >
-                                {getPlanetAbbr(planet)}
-                              </Box>
-                            </Tooltip>
-                          );
-                        }
-                        return null;
-                      })}
-                    </Box>
-                  </Box>
-                  <Box></Box>
-                </Box>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Classic North Indian diamond chart — house positions are fixed; sign abbreviations rotate from Lagna.
+                </Typography>
+                <NorthIndianKundali
+                  housePositions={housePositions}
+                  planets={celebrity.planets}
+                  planetNakshatraDetails={planetNakshatraDetails}
+                  subtitle={`Lagna: ${celebrity.ascendant.sign} ${celebrity.ascendant.degree}°`}
+                />
 
               </AccordionDetails>
             </Accordion>
@@ -3173,82 +2384,12 @@ function CelebrityDetail() {
                   </Typography>
                 </Paper>
 
-                <Grid container spacing={2}>
-                  {Array.from({ length: 12 }, (_, i) => {
-                    const house = i + 1;
-                    const sign = d9HouseSigns[i];
-                    const planetsHere = d9PlanetsByHouse[house] || [];
-                    return (
-                      <Grid item xs={12} sm={6} md={3} key={`d9-${house}`}>
-                        <Paper
-                          elevation={0}
-                          sx={{
-                            p: 2,
-                            height: '100%',
-                            border: (theme) => `1px solid ${theme.palette.divider}`,
-                            borderRadius: 2,
-                            backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-                          }}
-                        >
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 1 }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                              House {house}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {sign}
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                            {planetsHere.length === 0 ? (
-                              <Typography variant="body2" color="text.secondary">
-                                —
-                              </Typography>
-                            ) : (
-                              planetsHere.map((planetKey) => {
-                                const bgColor = getPlanetColor(planetKey);
-                                const textColor = getTextColor(bgColor);
-                                const planetCap = planetKey.charAt(0).toUpperCase() + planetKey.slice(1);
-                                const d1Nak = planetNakshatraDetails[planetCap];
-                                return (
-                                  <Tooltip
-                                    key={`d9-${house}-${planetKey}`}
-                                    arrow
-                                    placement="top"
-                                    title={
-                                      <>
-                                        <strong>{planetCap}</strong>
-                                        <br /><strong>D9 sign:</strong> {d9PlanetSigns[planetKey]}
-                                        {d1Nak && (
-                                          <>
-                                            <br /><strong>Nakshatra:</strong> {d1Nak.nakshatra} · <strong>Pada:</strong> {d1Nak.pada}
-                                          </>
-                                        )}
-                                      </>
-                                    }
-                                  >
-                                    <Box
-                                      sx={{
-                                        backgroundColor: bgColor,
-                                        color: textColor,
-                                        padding: '2px 6px',
-                                        borderRadius: '999px',
-                                        fontSize: '0.8rem',
-                                        fontWeight: 'bold',
-                                        cursor: 'help',
-                                      }}
-                                    >
-                                      {getPlanetAbbr(planetKey)}
-                                    </Box>
-                                  </Tooltip>
-                                );
-                              })
-                            )}
-                          </Box>
-                        </Paper>
-                      </Grid>
-                    );
-                  })}
-                </Grid>
+                <NorthIndianKundali
+                  housePositions={d9HousePositions}
+                  planets={d9PlanetsForChart}
+                  planetNakshatraDetails={planetNakshatraDetails}
+                  subtitle={`D9 Lagna: ${d9AscSign}`}
+                />
               </AccordionDetails>
             </Accordion>
           </Grid>
@@ -3653,76 +2794,12 @@ function CelebrityDetail() {
                   Moon is treated as the 1st house. All other houses follow in order from the Moon’s sign.
                 </Typography>
 
-                <Grid container spacing={2}>
-                  {Array.from({ length: 12 }, (_, i) => {
-                    const house = i + 1;
-                    const sign = moonHouseSigns[i];
-                    const planetsHere = moonPlanetsByHouse[house] || [];
-                    return (
-                      <Grid item xs={12} sm={6} md={3} key={`moon-${house}`}>
-                        <Paper
-                          elevation={0}
-                          sx={{
-                            p: 2,
-                            height: '100%',
-                            border: (theme) => `1px solid ${theme.palette.divider}`,
-                            borderRadius: 2,
-                            backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-                          }}
-                        >
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 1 }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                              House {house}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {sign}
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                            {planetsHere.length === 0 ? (
-                              <Typography variant="body2" color="text.secondary">
-                                —
-                              </Typography>
-                            ) : (
-                              planetsHere.map((planetKey) => {
-                                const bgColor = getPlanetColor(planetKey);
-                                const textColor = getTextColor(bgColor);
-                                const data = celebrity.planets[planetKey];
-                                return (
-                                  <Tooltip
-                                    key={`moon-${house}-${planetKey}`}
-                                    arrow
-                                    placement="top"
-                                    title={
-                                      <>
-                                        <strong>{toPlanetLabel(planetKey)}</strong>
-                                        <br /><strong>D1 sign:</strong> {data.sign} · <strong>D1 house:</strong> {data.house}
-                                      </>
-                                    }
-                                  >
-                                    <Box
-                                      sx={{
-                                        backgroundColor: bgColor,
-                                        color: textColor,
-                                        padding: '2px 6px',
-                                        borderRadius: '999px',
-                                        fontSize: '0.8rem',
-                                        fontWeight: 'bold',
-                                        cursor: 'help',
-                                      }}
-                                    >
-                                      {getPlanetAbbr(planetKey)}
-                                    </Box>
-                                  </Tooltip>
-                                );
-                              })
-                            )}
-                          </Box>
-                        </Paper>
-                      </Grid>
-                    );
-                  })}
-                </Grid>
+                <NorthIndianKundali
+                  housePositions={moonHousePositions}
+                  planets={moonPlanetsForChart}
+                  planetNakshatraDetails={planetNakshatraDetails}
+                  subtitle={`Chandra Lagna: ${moonAscSign}`}
+                />
               </AccordionDetails>
             </Accordion>
           </Grid>
@@ -4731,6 +3808,17 @@ function CelebrityDetail() {
               const charts = chartKeys.map((key) => ({ key, label: key, ...(getDivChart(key)) }));
 
               const selected = charts[divisionalTab] || charts[0];
+              const divHousePositions = buildHouseSignNumbers(selected.ascSign);
+              const divPlanetsForChart = Object.fromEntries(
+                planetKeys.map((pKey) => [
+                  pKey,
+                  {
+                    house: getHouseNumber(selected.planetSigns[pKey], selected.ascSign),
+                    sign: selected.planetSigns[pKey],
+                    degree: celebrity.planets[pKey]?.degree,
+                  },
+                ])
+              );
 
               return (
                 <Box>
@@ -4751,79 +3839,12 @@ function CelebrityDetail() {
                     </Typography>
                   </Paper>
 
-                  <Grid container spacing={2}>
-                    {Array.from({ length: 12 }, (_, i) => {
-                      const house = i + 1;
-                      const sign = selected.houseSigns[i];
-                      const planetsHere = selected.planetsByHouse[house] || [];
-
-                      return (
-                        <Grid item xs={12} sm={6} md={3} key={`${selected.label}-${house}`}>
-                          <Paper
-                            elevation={0}
-                            sx={{
-                              p: 2,
-                              height: '100%',
-                              border: (theme) => `1px solid ${theme.palette.divider}`,
-                              borderRadius: 2,
-                              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-                            }}
-                          >
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 1 }}>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                                House {house}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {sign}
-                              </Typography>
-                            </Box>
-
-                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                              {planetsHere.length === 0 ? (
-                                <Typography variant="body2" color="text.secondary">
-                                  —
-                                </Typography>
-                              ) : (
-                                planetsHere.map((pKey) => {
-                                  const bg = getPlanetColor(pKey);
-                                  const tc = getTextColor(bg);
-                                  const d1 = celebrity.planets[pKey];
-                                  return (
-                                    <Tooltip
-                                      key={`${selected.label}-${house}-${pKey}`}
-                                      arrow
-                                      placement="top"
-                                      title={
-                                        <>
-                                          <strong>{toPlanetLabel(pKey)}</strong>
-                                          <br />D1: {d1.sign} {Number(d1.degree || 0).toFixed(2)}°
-                                          <br />{selected.label}: {selected.planetSigns[pKey]}
-                                        </>
-                                      }
-                                    >
-                                      <Box
-                                        sx={{
-                                          backgroundColor: bg,
-                                          color: tc,
-                                          padding: '2px 6px',
-                                          borderRadius: '999px',
-                                          fontSize: '0.8rem',
-                                          fontWeight: 'bold',
-                                          cursor: 'help',
-                                        }}
-                                      >
-                                        {getPlanetAbbr(pKey)}
-                                      </Box>
-                                    </Tooltip>
-                                  );
-                                })
-                              )}
-                            </Box>
-                          </Paper>
-                        </Grid>
-                      );
-                    })}
-                  </Grid>
+                  <NorthIndianKundali
+                    housePositions={divHousePositions}
+                    planets={divPlanetsForChart}
+                    planetNakshatraDetails={planetNakshatraDetails}
+                    subtitle={`${selected.label} Lagna: ${selected.ascSign}`}
+                  />
                 </Box>
               );
             })()}

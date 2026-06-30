@@ -26,150 +26,10 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { alpha } from '@mui/material/styles';
 import { calculateChart } from '../utils/chartCalculation';
 import { getPlanetNakshatraDetails, getNakshatraDetailsFromLongitude } from '../utils/nakshatraCalculation';
-
-const PLANET_KEYS = ['sun', 'moon', 'mars', 'mercury', 'jupiter', 'venus', 'saturn', 'rahu', 'ketu'];
-const PLANET_NAMES = {
-  sun: 'Sun',
-  moon: 'Moon',
-  mars: 'Mars',
-  mercury: 'Mercury',
-  jupiter: 'Jupiter',
-  venus: 'Venus',
-  saturn: 'Saturn',
-  rahu: 'Rahu',
-  ketu: 'Ketu',
-};
-
-const getPlanetAbbr = (planet) => {
-  const planetMap = {
-    sun: 'Su', moon: 'Mo', mars: 'Ma', mercury: 'Me',
-    jupiter: 'Ju', venus: 'Ve', saturn: 'Sa', rahu: 'Ra', ketu: 'Ke',
-  };
-  return planetMap[planet] || planet;
-};
-
-const getPlanetColor = (planet) => {
-  const colorMap = {
-    sun: '#E25825',
-    moon: '#87CEEB',
-    mars: '#FF0000',
-    mercury: '#008000',
-    jupiter: '#FFDF00',
-    venus: '#FF69B4',
-    saturn: '#808080',
-    rahu: '#800080',
-    ketu: '#CD853F',
-  };
-  return colorMap[planet] || '#1976d2';
-};
-
-const getTextColor = (backgroundColor) => {
-  const hex = backgroundColor.replace('#', '');
-  const r = parseInt(hex.substr(0, 2), 16);
-  const g = parseInt(hex.substr(2, 2), 16);
-  const b = parseInt(hex.substr(4, 2), 16);
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.5 ? '#000000' : '#ffffff';
-};
-
-const ZODIAC_SIGNS = [
-  'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
-  'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces',
-];
-
-const getZodiacNumber = (sign) => {
-  const zodiacMap = {
-    Aries: 1, Taurus: 2, Gemini: 3, Cancer: 4,
-    Leo: 5, Virgo: 6, Libra: 7, Scorpio: 8,
-    Sagittarius: 9, Capricorn: 10, Aquarius: 11, Pisces: 12,
-  };
-  return zodiacMap[sign] || 0;
-};
-
-const transitChartGridSx = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(5, 1fr)',
-  gap: 2,
-  mt: 2,
-  '& > div': {
-    position: 'relative',
-    minHeight: '120px',
-    p: 2,
-    borderRadius: 2,
-    border: (theme) => `1px solid ${theme.palette.divider}`,
-    backgroundColor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)'),
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-};
-
-function GocharHouseCell({ houseNum, housePositions, planets, planetNakshatraDetails }) {
-  const idx = houseNum - 1;
-  return (
-    <Box>
-      <Typography variant="subtitle2" color="text.secondary">
-        House {houseNum}
-      </Typography>
-      <Typography variant="body2">
-        {housePositions[idx] ?? ''}
-      </Typography>
-      <Box
-        sx={{
-          position: 'absolute',
-          bottom: 4,
-          display: 'flex',
-          gap: 1,
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-          width: '100%',
-        }}
-      >
-        {Object.entries(planets).map(([planet, data]) => {
-          if (data.house !== houseNum) return null;
-          const bgColor = getPlanetColor(planet);
-          const textColor = getTextColor(bgColor);
-          const planetCap = planet.charAt(0).toUpperCase() + planet.slice(1);
-          const nakDetail = planetNakshatraDetails[planetCap];
-          return (
-            <Tooltip
-              key={planet}
-              title={
-                <>
-                  <strong>Sign:</strong> {data.sign} · <strong>Degree:</strong> {data.degree}°
-                  {nakDetail && (
-                    <>
-                      <br />
-                      <strong>Nakshatra:</strong> {nakDetail.nakshatra} · <strong>Pada:</strong> {nakDetail.pada}
-                    </>
-                  )}
-                </>
-              }
-              arrow
-              placement="top"
-            >
-              <Box
-                sx={{
-                  backgroundColor: bgColor,
-                  color: textColor,
-                  padding: '2px 4px',
-                  borderRadius: '4px',
-                  fontSize: '0.8rem',
-                  fontWeight: 'bold',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                  cursor: 'help',
-                }}
-              >
-                {getPlanetAbbr(planet)}
-              </Box>
-            </Tooltip>
-          );
-        })}
-      </Box>
-    </Box>
-  );
-}
+import { PLANET_KEYS, PLANET_NAMES } from '../constants/astrology';
+import { getPlanetAbbr, getPlanetColor, getTextColor } from '../utils/planetDisplay';
+import NorthIndianKundali from '../components/NorthIndianKundali';
+import { buildHousePositionsFromChart } from '../utils/kundaliChart';
 
 function parseTzOffsetMinutes(tz) {
   const raw = String(tz || '').trim();
@@ -304,21 +164,7 @@ function Gochar() {
 
   const housePositions = useMemo(() => {
     if (!ascendant || !chartPlanets) return null;
-    const arr = Array(12).fill(null);
-    arr[0] = getZodiacNumber(ascendant.sign);
-    Object.values(chartPlanets).forEach((data) => {
-      if (data.house && data.house > 0 && data.house <= 12) {
-        arr[data.house - 1] = getZodiacNumber(data.sign);
-      }
-    });
-    const ascendantIndex = ZODIAC_SIGNS.indexOf(ascendant.sign);
-    for (let i = 0; i < 12; i += 1) {
-      if (!arr[i]) {
-        const signIndex = (ascendantIndex + i) % 12;
-        arr[i] = signIndex + 1;
-      }
-    }
-    return arr;
+    return buildHousePositionsFromChart(ascendant.sign, chartPlanets);
   }, [ascendant, chartPlanets]);
 
   return (
@@ -422,103 +268,18 @@ function Gochar() {
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 Transit Vedic Kundli
               </Typography>
-              <Chip label="House chart (D1)" size="small" sx={{ ml: 1 }} variant="outlined" />
+              <Chip label="North Indian" size="small" sx={{ ml: 1 }} variant="outlined" />
             </AccordionSummary>
             <AccordionDetails sx={{ pt: 0 }}>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                North Indian layout: same as celebrity birth chart — houses and planets for the computed transit time.
+                North Indian chart for current transit positions.
               </Typography>
-              <Box sx={transitChartGridSx}>
-                <Box />
-                <GocharHouseCell
-                  houseNum={2}
-                  housePositions={housePositions}
-                  planets={chartPlanets}
-                  planetNakshatraDetails={planetNakshatraDetails}
-                />
-                <Box />
-                <GocharHouseCell
-                  houseNum={12}
-                  housePositions={housePositions}
-                  planets={chartPlanets}
-                  planetNakshatraDetails={planetNakshatraDetails}
-                />
-                <Box />
-
-                <GocharHouseCell
-                  houseNum={3}
-                  housePositions={housePositions}
-                  planets={chartPlanets}
-                  planetNakshatraDetails={planetNakshatraDetails}
-                />
-                <Box />
-                <GocharHouseCell
-                  houseNum={1}
-                  housePositions={housePositions}
-                  planets={chartPlanets}
-                  planetNakshatraDetails={planetNakshatraDetails}
-                />
-                <Box />
-                <GocharHouseCell
-                  houseNum={11}
-                  housePositions={housePositions}
-                  planets={chartPlanets}
-                  planetNakshatraDetails={planetNakshatraDetails}
-                />
-
-                <Box />
-                <GocharHouseCell
-                  houseNum={4}
-                  housePositions={housePositions}
-                  planets={chartPlanets}
-                  planetNakshatraDetails={planetNakshatraDetails}
-                />
-                <Box />
-                <GocharHouseCell
-                  houseNum={10}
-                  housePositions={housePositions}
-                  planets={chartPlanets}
-                  planetNakshatraDetails={planetNakshatraDetails}
-                />
-                <Box />
-
-                <GocharHouseCell
-                  houseNum={5}
-                  housePositions={housePositions}
-                  planets={chartPlanets}
-                  planetNakshatraDetails={planetNakshatraDetails}
-                />
-                <Box />
-                <GocharHouseCell
-                  houseNum={7}
-                  housePositions={housePositions}
-                  planets={chartPlanets}
-                  planetNakshatraDetails={planetNakshatraDetails}
-                />
-                <Box />
-                <GocharHouseCell
-                  houseNum={9}
-                  housePositions={housePositions}
-                  planets={chartPlanets}
-                  planetNakshatraDetails={planetNakshatraDetails}
-                />
-
-                <Box />
-                <GocharHouseCell
-                  houseNum={6}
-                  housePositions={housePositions}
-                  planets={chartPlanets}
-                  planetNakshatraDetails={planetNakshatraDetails}
-                />
-                <Box />
-                <GocharHouseCell
-                  houseNum={8}
-                  housePositions={housePositions}
-                  planets={chartPlanets}
-                  planetNakshatraDetails={planetNakshatraDetails}
-                />
-                <Box />
-              </Box>
+              <NorthIndianKundali
+                housePositions={housePositions}
+                planets={chartPlanets}
+                planetNakshatraDetails={planetNakshatraDetails}
+                subtitle={ascendant ? `Transit Lagna: ${ascendant.sign} ${ascendant.degree}°` : undefined}
+              />
             </AccordionDetails>
           </Accordion>
         )}
